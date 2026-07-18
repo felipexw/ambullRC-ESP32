@@ -55,23 +55,27 @@ If anything here conflicts with the constitution, the constitution wins.
 
 ## Toolchain
 
-> **Not yet chosen.** When the build system is selected (e.g., PlatformIO with a `native` test
-> environment, ESP-IDF, or Arduino), record the exact build/flash/test commands here and in the
-> README. A host-runnable test environment is a hard requirement (Principle II), so favor a
-> toolchain that supports native/host unit testing.
-
-Once established, this section should contain the concrete commands, for example:
+**PlatformIO**, with the `esp32dev` board (Arduino framework) for firmware and a `native`
+environment for host-only tests (Principle II: tests must run without a physical ESP32).
 
 ```
 # build firmware
-<TBD>
+pio run -e esp32dev
 
 # run the full test suite on the host (no ESP32 needed)
-<TBD>
+pio test -e native
 
-# flash to a connected ESP32
-<TBD>
+# flash to a connected ESP32 (find the port with `pio device list`)
+pio run -e esp32dev -t upload
+
+# view serial output
+pio device monitor -b 115200
 ```
+
+The ESP32 board here uses a Silicon Labs CP2102 USB-UART chip. On macOS, this requires the
+CP210x VCP driver (`brew install --cask silicon-labs-vcp-driver`), which must then be approved
+under System Settings → General → Login Items & Extensions → Driver Extensions, followed by a
+full restart — a device replug alone is not enough for the driver process to start.
 
 ## Conventions
 

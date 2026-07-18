@@ -11,7 +11,9 @@ is needed (YAGNI), keep the architecture small, and cover every feature with aut
 
 ## Status
 
-Early setup. Project principles are defined; source code and toolchain are not yet in place.
+Toolchain is set up (PlatformIO, `esp32dev` board). `src/main.cpp` is currently a smoke-test
+sketch confirming the build/flash pipeline; the real Transport/Protocol/Control/Hardware layers
+described below are not yet implemented.
 
 ## How it works
 
@@ -46,8 +48,37 @@ Every feature is covered by automated tests before it is considered done:
 
 The test suite runs on a host machine, no physical ESP32 required.
 
-> Build and test commands will be documented here once the toolchain is chosen
-> (see [AGENTS.md](AGENTS.md)).
+## Toolchain
+
+Firmware is built with **[PlatformIO](https://platformio.org)**, driven by the `pio` CLI and
+configured in [`platformio.ini`](platformio.ini). It handles compiling, flashing over USB, and
+running the host test suite, so you don't need the Arduino IDE or a hand-rolled ESP-IDF setup.
+
+- **Board:** `esp32dev` (generic ESP32 DevKit board, CP2102 USB-UART bridge)
+- **Framework:** Arduino for ESP32, built on **ESP-IDF v5.4.2**
+- **Platform:** `espressif32` @ 7.0.1
+
+```
+pio run -e esp32dev              # compile firmware
+pio run -e esp32dev -t upload    # compile + flash to a connected ESP32 over USB
+pio device monitor -b 115200     # view serial output from the board
+pio test -e native               # run the full test suite on the host, no ESP32 needed
+pio device list                  # list connected serial ports (find yours if upload can't autodetect)
+```
+
+### macOS USB driver
+
+The CP2102 chip needs the Silicon Labs CP210x VCP driver, which macOS doesn't include by
+default:
+
+```
+brew install --cask silicon-labs-vcp-driver
+```
+
+After installing, macOS blocks it until you approve it manually: **System Settings → General →
+Login Items & Extensions → Driver Extensions**, enable `com.silabs.cp210x`, then **restart your
+Mac** — a device replug alone is not enough for the driver process to actually start. Once
+approved and restarted, the board shows up as `/dev/cu.usbserial-*` or `/dev/cu.SLAB_USBtoUART`.
 
 ## Repository layout
 
@@ -56,6 +87,9 @@ The test suite runs on a host machine, no physical ESP32 required.
 AGENTS.md                         # Guidance for AI coding agents / contributors
 CLAUDE.md                         # Pointer to AGENTS.md for Claude Code
 README.md                         # This file
+platformio.ini                    # PlatformIO project config (board, framework, envs)
+src/                               # Firmware source
+test/                              # Tests (native/host-runnable)
 ```
 
 ## Project principles
