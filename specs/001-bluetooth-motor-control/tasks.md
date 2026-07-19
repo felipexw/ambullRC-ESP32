@@ -209,6 +209,28 @@ once per transition — independent of drive-command parsing.
 
 ---
 
+## Phase 8: Connection identification (post-slice addition)
+
+**Goal**: Tag each connection lifecycle log with the connecting device's Bluetooth MAC address
+(no pairing/name resolution is performed, so the address is the identifier).
+
+- [X] T035 [P] Extend `ITransport` with `deviceId()` in `src/transport/i_transport.h`; add
+      `setDeviceId()`/`deviceId()` to `FakeTransport` in `test/test_native/fakes/fake_transport.h`
+- [X] T036 [P] Extend `IConnectionOutput::emit()` to take a `deviceId` string in
+      `src/hardware/i_connection_output.h`; update `SerialConnectionOutput` to print it
+      (`src/hardware/serial_connection_output.h`) and `RecordingConnectionOutput` to record it
+      (`test/test_native/fakes/recording_connection_output.h`)
+- [X] T037 [US] Unit/integration tests: device id is captured on connect and retained through the
+      following disconnect log, in `test/test_native/test_connection_logging_flow.cpp`
+- [X] T038 Implement MAC-address capture in `BluetoothTransport` via `register_callback()` on
+      `ESP_SPP_SRV_OPEN_EVT` (`param->srv_open.rem_bda`), formatted as `AA:BB:CC:DD:EE:FF`, in
+      `src/transport/bluetooth_transport.h`
+- [X] T039 Wire `transport.deviceId()` into the `connectionOutput.emit()` call in `src/main.cpp`
+- [X] T040 Update `contracts/bluetooth-command-protocol.md` and `quickstart.md` with the
+      device-id logging format
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

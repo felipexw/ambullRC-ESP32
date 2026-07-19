@@ -22,12 +22,13 @@ SerialConnectionOutput connectionOutput;
 void setup() {
   Serial.begin(115200);
   transport.begin("ambullrc-esp32");
+  Serial.println("READY: ambullrc-esp32");
 }
 
 void loop() {
   ConnectionEvent connectionEvent = connectionMonitor.onTick(transport.connected());
   if (connectionEvent != ConnectionEvent::None) {
-    connectionOutput.emit(connectionEvent);
+    connectionOutput.emit(connectionEvent, transport.deviceId());
   }
 
   std::string line;
@@ -42,5 +43,4 @@ void loop() {
   if (control.onTick(transport.connected(), millis(), safeStateDirection)) {
     output.emit(safeStateDirection);
   }
-  Serial.println("it's working");
 }

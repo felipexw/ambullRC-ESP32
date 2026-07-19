@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "control/connection_event.h"
 
 // Hardware layer interface for connection lifecycle logging. This slice's
@@ -9,5 +11,7 @@ class IConnectionOutput {
  public:
   virtual ~IConnectionOutput() = default;
 
-  virtual void emit(ConnectionEvent event) = 0;
+  // `deviceId` identifies the peer the event pertains to (see
+  // ITransport::deviceId) — empty if unknown.
+  virtual void emit(ConnectionEvent event, const std::string& deviceId) = 0;
 };

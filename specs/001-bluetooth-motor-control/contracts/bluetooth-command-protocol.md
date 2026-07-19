@@ -43,15 +43,18 @@ One command per line, ASCII, newline (`\n`) terminated:
 ## Connection lifecycle logging
 
 Independent of command parsing, every successful connection and every lost connection is logged
-to serial exactly once per transition:
+to serial exactly once per transition, tagged with the peer's Bluetooth MAC address (no pairing
+or name resolution is performed, per FR-011, so the address is the identifier — not a friendly
+device name):
 
 | Event | Printed |
 |-------|---------|
-| A Bluetooth client connects | `BLUETOOTH_CONNECTED` |
-| The Bluetooth client disconnects | `BLUETOOTH_DISCONNECTED` |
+| A Bluetooth client connects | `BLUETOOTH_CONNECTED AA:BB:CC:DD:EE:FF` |
+| The Bluetooth client disconnects | `BLUETOOTH_DISCONNECTED AA:BB:CC:DD:EE:FF` (last known address) |
 
 This is edge-detected (`ConnectionMonitor`) from the transport's `connected()` flag, polled once
-per loop iteration — no repeated logging while the state is unchanged.
+per loop iteration — no repeated logging while the state is unchanged. The address is captured
+from the SPP server-open event and retained until the next connection overwrites it.
 
 ## Current scope (this feature)
 

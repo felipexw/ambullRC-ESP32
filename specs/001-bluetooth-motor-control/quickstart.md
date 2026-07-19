@@ -34,7 +34,8 @@ and `data-model.md`.
    ```
 
 3. From your phone, pair with the ESP32 over Bluetooth and open an SPP terminal app; connect to
-   the paired device. Confirm `BLUETOOTH_CONNECTED` is printed once the connection is established.
+   the paired device. Confirm `BLUETOOTH_CONNECTED AA:BB:CC:DD:EE:FF` (the phone's Bluetooth MAC
+   address) is printed once the connection is established.
 
 4. Send each line below (per `contracts/bluetooth-command-protocol.md`) and confirm the matching
    `Direction` appears in the serial monitor:
@@ -50,11 +51,11 @@ and `data-model.md`.
    | `abc` (garbage) | *(nothing printed; no crash, monitor stays alive)* |
    | `200,0` (out of range) | *(nothing printed; last direction unchanged)* |
 
-5. Disconnect the terminal app (or stop sending). Confirm `BLUETOOTH_DISCONNECTED` is printed
-   once, immediately, and `STOP` is printed once shortly after (on timeout), with no further
-   prints until a new valid command is sent.
+5. Disconnect the terminal app (or stop sending). Confirm `BLUETOOTH_DISCONNECTED` (with the same
+   address as step 3) is printed once, immediately, and `STOP` is printed once shortly after (on
+   timeout), with no further prints until a new valid command is sent.
 
-6. Reconnect. Confirm `BLUETOOTH_CONNECTED` is printed again.
+6. Reconnect. Confirm `BLUETOOTH_CONNECTED` is printed again with the address.
 
 ## Out of scope for this validation
 

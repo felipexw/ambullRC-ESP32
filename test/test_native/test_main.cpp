@@ -55,6 +55,7 @@ extern void test_connection_monitor_reports_connected_again_after_reconnect(void
 
 // test_connection_logging_flow.cpp
 extern void test_flow_logs_connected_then_disconnected_then_reconnected(void);
+extern void test_flow_logs_device_id_on_connect_and_retains_it_on_disconnect(void);
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -107,6 +108,7 @@ int main(int argc, char **argv) {
   RUN_TEST(test_connection_monitor_reports_connected_again_after_reconnect);
 
   RUN_TEST(test_flow_logs_connected_then_disconnected_then_reconnected);
+  RUN_TEST(test_flow_logs_device_id_on_connect_and_retains_it_on_disconnect);
 
   return UNITY_END();
 }
