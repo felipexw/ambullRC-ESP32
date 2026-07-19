@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <string>
 
+#include "hardware/timestamp.h"
 #include "transport/i_transport.h"
 
 // ESP32-only. Never included by test/test_native — keeps the host test
@@ -41,7 +42,9 @@ class BluetoothTransport : public ITransport {
   // line, so nothing received over the wire goes unlogged.
   static void logRawByte(char c) {
     uint8_t byte = static_cast<uint8_t>(c);
-    Serial.print("RX 0x");
+    Serial.print('[');
+    Serial.print(formatTimestamp(millis()).c_str());
+    Serial.print("] RX 0x");
     if (byte < 0x10) Serial.print('0');
     Serial.print(byte, HEX);
     if (byte >= 0x20 && byte < 0x7F) {

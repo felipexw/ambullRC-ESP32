@@ -6,6 +6,7 @@
 
 #include "control/connection_event.h"
 #include "hardware/i_connection_output.h"
+#include "hardware/timestamp.h"
 
 // This slice's only real Hardware implementation: prints connect/disconnect
 // events, tagged with the peer's identification when known, to serial.
@@ -13,6 +14,9 @@
 class SerialConnectionOutput : public IConnectionOutput {
  public:
   void emit(ConnectionEvent event, const std::string& deviceId) override {
+    Serial.print('[');
+    Serial.print(formatTimestamp(millis()).c_str());
+    Serial.print("] ");
     if (deviceId.empty()) {
       Serial.println(toString(event));
       return;
