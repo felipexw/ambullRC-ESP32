@@ -14,4 +14,12 @@ constexpr int kSteerMax = 100;
 constexpr int kThrottleMin = -100;
 constexpr int kThrottleMax = 100;
 
+// SG90 bring-up test (main.cpp) — not yet wired through Control/Hardware.
+constexpr int kServoPin = 13;
+constexpr int kServoMinAngleDeg = 0;
+constexpr int kServoMaxAngleDeg = 180;
+constexpr int kServoNeutralAngleDeg = 90;
+constexpr int kServoMinPulseUs = 500;
+constexpr int kServoMaxPulseUs = 2400;
+
 }  // namespace config
