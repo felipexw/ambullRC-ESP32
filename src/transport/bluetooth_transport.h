@@ -5,7 +5,6 @@
 #include <cstdio>
 #include <string>
 
-#include "hardware/timestamp.h"
 #include "transport/i_transport.h"
 
 // ESP32-only. Never included by test/test_native — keeps the host test
@@ -25,7 +24,6 @@ class BluetoothTransport : public ITransport {
   bool readLine(std::string& outLine) override {
     while (bt_.available()) {
       char c = static_cast<char>(bt_.read());
-      logRawByte(c);
       if (c == '\n') {
         outLine = buffer_;
         buffer_.clear();
@@ -37,24 +35,6 @@ class BluetoothTransport : public ITransport {
   }
 
  private:
-  // Logs every raw byte received over Bluetooth, before any line-framing or
-  // parsing — including bytes that never end up in a complete (\n-terminated)
-  // line, so nothing received over the wire goes unlogged.
-  static void logRawByte(char c) {
-    uint8_t byte = static_cast<uint8_t>(c);
-    Serial.print('[');
-    Serial.print(formatTimestamp(millis()).c_str());
-    Serial.print("] RX 0x");
-    if (byte < 0x10) Serial.print('0');
-    Serial.print(byte, HEX);
-    if (byte >= 0x20 && byte < 0x7F) {
-      Serial.print(" '");
-      Serial.print(c);
-      Serial.print('\'');
-    }
-    Serial.println();
-  }
-
   // register_callback() takes a plain function pointer (no captured state),
   // so the single BluetoothTransport instance is tracked via a static
   // pointer set in begin().

@@ -57,6 +57,37 @@ extern void test_connection_monitor_reports_connected_again_after_reconnect(void
 extern void test_flow_logs_connected_then_disconnected_then_reconnected(void);
 extern void test_flow_logs_device_id_on_connect_and_retains_it_on_disconnect(void);
 
+// test_motor_servo_vehicle_output.cpp
+extern void test_output_forward_drives_forward_immediately(void);
+extern void test_output_backward_drives_reverse_immediately(void);
+extern void test_output_stop_stops_immediately(void);
+extern void test_output_reversal_stops_immediately_then_waits_before_reversing(void);
+extern void test_output_right_turn_auto_stops_after_pulse_duration_with_no_new_command(void);
+extern void test_output_left_turn_auto_stops_after_pulse_duration_with_no_new_command(void);
+extern void test_output_switching_turn_direction_restarts_the_pulse(void);
+extern void test_output_stop_centers_servo_immediately_mid_turn_pulse(void);
+
+// test_command_to_actuation_flow.cpp
+extern void test_actuation_flow_forward_then_reverse_respects_pause(void);
+extern void test_actuation_flow_steering_independent_of_motor(void);
+extern void test_actuation_flow_disconnect_stops_motor_and_centers_servo_immediately(void);
+extern void test_actuation_flow_disconnect_mid_pause_stays_stopped(void);
+extern void test_actuation_flow_malformed_line_does_not_change_hardware_state(void);
+extern void test_actuation_flow_turn_auto_stops_without_further_commands(void);
+extern void test_actuation_flow_word_commands_up_then_right_stay_independent(void);
+
+// test_drive_command_assembler.cpp
+extern void test_assembler_up_sets_throttle_forward_steer_straight(void);
+extern void test_assembler_down_sets_throttle_reverse(void);
+extern void test_assembler_left_sets_steer_min(void);
+extern void test_assembler_right_sets_steer_max(void);
+extern void test_assembler_word_commands_are_case_insensitive(void);
+extern void test_assembler_up_then_right_preserves_throttle(void);
+extern void test_assembler_right_then_up_preserves_steer(void);
+extern void test_assembler_numeric_command_overwrites_both_axes(void);
+extern void test_assembler_rejects_unrecognized_word(void);
+extern void test_assembler_reset_clears_stale_axis_state(void);
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -109,6 +140,34 @@ int main(int argc, char **argv) {
 
   RUN_TEST(test_flow_logs_connected_then_disconnected_then_reconnected);
   RUN_TEST(test_flow_logs_device_id_on_connect_and_retains_it_on_disconnect);
+
+  RUN_TEST(test_output_forward_drives_forward_immediately);
+  RUN_TEST(test_output_backward_drives_reverse_immediately);
+  RUN_TEST(test_output_stop_stops_immediately);
+  RUN_TEST(test_output_reversal_stops_immediately_then_waits_before_reversing);
+  RUN_TEST(test_output_right_turn_auto_stops_after_pulse_duration_with_no_new_command);
+  RUN_TEST(test_output_left_turn_auto_stops_after_pulse_duration_with_no_new_command);
+  RUN_TEST(test_output_switching_turn_direction_restarts_the_pulse);
+  RUN_TEST(test_output_stop_centers_servo_immediately_mid_turn_pulse);
+
+  RUN_TEST(test_actuation_flow_forward_then_reverse_respects_pause);
+  RUN_TEST(test_actuation_flow_steering_independent_of_motor);
+  RUN_TEST(test_actuation_flow_disconnect_stops_motor_and_centers_servo_immediately);
+  RUN_TEST(test_actuation_flow_disconnect_mid_pause_stays_stopped);
+  RUN_TEST(test_actuation_flow_malformed_line_does_not_change_hardware_state);
+  RUN_TEST(test_actuation_flow_turn_auto_stops_without_further_commands);
+  RUN_TEST(test_actuation_flow_word_commands_up_then_right_stay_independent);
+
+  RUN_TEST(test_assembler_up_sets_throttle_forward_steer_straight);
+  RUN_TEST(test_assembler_down_sets_throttle_reverse);
+  RUN_TEST(test_assembler_left_sets_steer_min);
+  RUN_TEST(test_assembler_right_sets_steer_max);
+  RUN_TEST(test_assembler_word_commands_are_case_insensitive);
+  RUN_TEST(test_assembler_up_then_right_preserves_throttle);
+  RUN_TEST(test_assembler_right_then_up_preserves_steer);
+  RUN_TEST(test_assembler_numeric_command_overwrites_both_axes);
+  RUN_TEST(test_assembler_rejects_unrecognized_word);
+  RUN_TEST(test_assembler_reset_clears_stale_axis_state);
 
   return UNITY_END();
 }
