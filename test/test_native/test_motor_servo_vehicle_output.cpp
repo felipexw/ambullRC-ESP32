@@ -74,11 +74,10 @@ void test_output_reversal_stops_immediately_then_waits_before_reversing(void) {
   TEST_ASSERT_EQUAL(static_cast<int>(FakeMotorDriver::Call::Reverse), static_cast<int>(motor.last()));
 }
 
-// Reproduces the real hardware bug: the steering servo is continuous-
-// rotation, not positional — it has no way to hold a fixed angle, only a
-// speed/direction, so a sustained non-neutral pulse spins it forever. A
-// turn direction must therefore auto-stop after a bounded pulse
-// (config::kServoTurnPulseMs) even if no new Direction is ever emitted.
+// LEFT/RIGHT is a momentary tap-to-turn: the servo swings to its lock and
+// then auto-centers after a bounded pulse (config::kServoTurnPulseMs) even
+// if no new Direction is ever emitted, rather than holding stalled against
+// the mechanical end-stop indefinitely.
 
 void test_output_right_turn_auto_stops_after_pulse_duration_with_no_new_command(void) {
   FakeMotorDriver motor;
@@ -93,9 +92,8 @@ void test_output_right_turn_auto_stops_after_pulse_duration_with_no_new_command(
   output.tick(config::kServoTurnPulseMs - 1);
   TEST_ASSERT_EQUAL(config::kServoRightAngleDeg, servo.last());
 
-  // Pulse elapsed, still no new command: must auto-stop (this is the fix —
-  // previously nothing ever re-wrote the stop pulse here, so it spun
-  // forever).
+  // Pulse elapsed, still no new command: must auto-stop — otherwise it spins
+  // against the mechanical lock indefinitely.
   output.tick(config::kServoTurnPulseMs);
   TEST_ASSERT_EQUAL(config::kServoNeutralAngleDeg, servo.last());
 }
@@ -145,9 +143,6 @@ void test_output_stop_centers_servo_immediately_mid_turn_pulse(void) {
   output.tick(0);
   TEST_ASSERT_EQUAL(config::kServoRightAngleDeg, servo.last());
 
-  // Direction returns to Stop well before the pulse would naturally elapse
-  // — the fail-safe/neutral case must center immediately, not wait out the
-  // turn pulse.
   output.emit(Direction::Stop);
   output.tick(10);
   TEST_ASSERT_EQUAL(config::kServoNeutralAngleDeg, servo.last());

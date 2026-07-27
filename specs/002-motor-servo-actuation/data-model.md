@@ -61,13 +61,14 @@ operator lets off the reverse command back to `Stopped` mid-pause); `tick()` alw
 `Stopped`, which is not subject to the pause — see FR-009).
 
 The servo angle has its own bounded-pulse state machine, mirroring the motor's shape but for a
-different reason: the physical servo is continuous-rotation, so it cannot hold a `LEFT`/`RIGHT`
-angle — holding the pulse just spins it forever. `emit()` records the desired angle;
-`tick()` applies it (starting a `config::kServoTurnPulseMs` timer whenever the applied angle is
-non-neutral) and, once that timer elapses with no new angle having arrived, force-applies
-`kServoNeutralAngleDeg` again. Reaching `kServoNeutralAngleDeg` (including via the fail-safe)
-always applies immediately and cancels any in-progress pulse. See
-`contracts/direction-to-actuation-contract.md`.
+different reason: the physical servo is a positional 180° micro servo — it holds a commanded
+`LEFT`/`RIGHT` angle indefinitely, so the bound exists to give the app's per-axis word protocol a
+momentary tap-to-turn feel and to avoid stalling the servo against its mechanical end-stop for as
+long as the app keeps latching `LEFT`/`RIGHT`. `emit()` records the desired angle; `tick()` applies
+it (starting a `config::kServoTurnPulseMs` timer whenever the applied angle is non-neutral) and,
+once that timer elapses with no new angle having arrived, force-applies `kServoNeutralAngleDeg`
+again. Reaching `kServoNeutralAngleDeg` (including via the fail-safe) always applies immediately
+and cancels any in-progress pulse. See `contracts/direction-to-actuation-contract.md`.
 
 | Field | Type | Notes |
 |-------|------|-------|

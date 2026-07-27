@@ -12,22 +12,17 @@ class PwmSteeringServo : public ISteeringServo {
   void begin() {
     servo_.setPeriodHertz(50);
     servo_.attach(config::kServoPin, config::kServoMinPulseUs, config::kServoMaxPulseUs);
-    // This is a continuous-rotation (360°) servo: pulse width controls speed
-    // and direction, not a held position. Boot must land on the stop pulse
-    // (kServoNeutralAngleDeg), same as the fail-safe state — any other value
-    // (e.g. a positional-servo-style "0 degrees") spins the shaft at speed
-    // with nothing to stop it until the first command arrives.
-    setAngleDeg(config::kServoNeutralAngleDeg);
+    // Positional 180° micro servo: it holds whatever angle it's told, so
+    // (unlike a continuous-rotation unit) it doesn't need a continuous
+    // "stop" pulse driven at boot — the first real command sets it.
+    // setAngleDeg(config::kServoNeutralAngleDeg);
   }
 
   void setAngleDeg(int angleDeg) override {
     angleDeg = constrain(angleDeg, config::kServoMinAngleDeg, config::kServoMaxAngleDeg);
     if (!hasWritten_ || angleDeg != lastAngleDeg_) {
-      Serial.print("moving servo motor to ");
-      Serial.print(labelFor(angleDeg));
-      Serial.print(" (");
-      Serial.print(angleDeg);
-      Serial.println(" deg)");
+      Serial.print("servo angle: ");
+      Serial.println(angleDeg);
       hasWritten_ = true;
       lastAngleDeg_ = angleDeg;
     }
@@ -41,13 +36,6 @@ class PwmSteeringServo : public ISteeringServo {
   }
 
  private:
-  static const char* labelFor(int angleDeg) {
-    if (angleDeg == config::kServoLeftAngleDeg) return "LEFT";
-    if (angleDeg == config::kServoRightAngleDeg) return "RIGHT";
-    if (angleDeg == config::kServoNeutralAngleDeg) return "STOP";
-    return "UNKNOWN";
-  }
-
   Servo servo_;
   bool hasWritten_ = false;
   int lastAngleDeg_ = 0;

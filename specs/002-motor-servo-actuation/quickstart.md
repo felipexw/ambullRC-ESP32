@@ -47,9 +47,9 @@ the motor/servo fakes, including a disconnect scenario).
    | `50,100` | `FORWARD_RIGHT` | spins forward | turns toward full-right lock, then auto-stops |
    | `0,0` | `STOP` | stopped | centered |
 
-   The servo is continuous-rotation, not positional: `LEFT`/`RIGHT` spin it for
-   `config::kServoTurnPulseMs` (~300ms) then it self-stops, even if you never send another
-   command — confirm it does NOT keep spinning indefinitely after a `LEFT`/`RIGHT` send.
+   The servo is a positional 180° micro servo: `LEFT`/`RIGHT` hold it at its lock for
+   `config::kServoTurnPulseMs` (~300ms) then it self-centers, even if you never send another
+   command — confirm it does NOT stay pinned at the lock indefinitely after a `LEFT`/`RIGHT` send.
 
 4. Send `0,100` (forward), then immediately send `0,-100` (reverse). Confirm the motor visibly
    stops for roughly 300ms before spinning in reverse — it must not snap directly from forward to

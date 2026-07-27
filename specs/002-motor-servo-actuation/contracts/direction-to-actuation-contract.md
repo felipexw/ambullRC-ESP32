@@ -18,13 +18,13 @@ servo exactly as follows. No other `Direction` values exist.
 
 ## Timing rules
 
-- **Servo angle**: the physical servo is continuous-rotation (360°), not positional — it has no
-  way to hold a fixed angle, only a speed/direction set by the commanded pulse. A `LEFT`/`RIGHT`
-  angle is therefore applied as a bounded pulse (`config::kServoTurnPulseMs`, applied via `tick()`)
-  long enough to swing the steering linkage to its lock; once the pulse elapses, the servo
-  auto-reverts to `kServoNeutralAngleDeg` regardless of whether the `Direction` is still
-  `LEFT`/`RIGHT`. Without this, the servo would spin forever once any turn direction is decided,
-  since nothing else would ever tell it to stop (see `research.md` §4, updated).
+- **Servo angle**: the physical servo is a positional 90g/180° micro servo — it holds a commanded
+  angle indefinitely. A `LEFT`/`RIGHT` angle is still applied as a bounded pulse
+  (`config::kServoTurnPulseMs`, applied via `tick()`) long enough to swing the steering linkage to
+  its lock; once the pulse elapses, the servo auto-reverts to `kServoNeutralAngleDeg` regardless of
+  whether the `Direction` is still `LEFT`/`RIGHT`. This gives the app's per-axis word protocol a
+  momentary tap-to-turn feel and avoids holding the servo stalled against its mechanical end-stop
+  for as long as the app keeps latching a turn direction (see `research.md` §4, updated).
 - **Motor polarity**: applied immediately *unless* the change is a true reversal (`Forward` ↔
   `Reverse` with neither side `Stopped`), per `data-model.md`'s state machine. A true reversal
   first stops the motor, then waits `config::kMotorReversePauseMs` (300ms) before engaging the new

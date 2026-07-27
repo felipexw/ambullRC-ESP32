@@ -179,10 +179,10 @@ void test_actuation_flow_malformed_line_does_not_change_hardware_state(void) {
   TEST_ASSERT_EQUAL(static_cast<int>(FakeMotorDriver::Call::Forward), static_cast<int>(motor.last()));
 }
 
-// Reproduces the real-world bug report: the app sends "RIGHT" once and the
-// servo (continuous-rotation, not positional) spins forever because nothing
-// ever tells it to stop — the connection stays active and no further
-// command ever arrives. It must self-stop after config::kServoTurnPulseMs.
+// The app sends "RIGHT" once, with no explicit "release"/"center" command
+// ever following it (the per-axis word protocol just latches until a
+// different command changes it) — the servo must still self-center after
+// config::kServoTurnPulseMs rather than holding the turn indefinitely.
 void test_actuation_flow_turn_auto_stops_without_further_commands(void) {
   FakeTransport transport;
   DriveCommandAssembler assembler;

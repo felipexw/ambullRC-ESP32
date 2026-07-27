@@ -10,18 +10,20 @@
 // DC motor and steering servo from a decided Direction, per
 // specs/002-motor-servo-actuation/contracts/direction-to-actuation-contract.md.
 //
-// The steering servo is continuous-rotation (360°), not positional: it has
-// no way to hold a fixed angle, only a speed/direction set by the commanded
-// pulse. So a LEFT/RIGHT direction is applied as a bounded pulse
-// (config::kServoTurnPulseMs) in tick() — long enough to swing the steering
-// linkage to its lock — after which tick() automatically re-writes the
-// neutral/stop pulse, regardless of whether the Direction is still
-// LEFT/RIGHT. The motor's polarity is applied immediately in tick() UNLESS
-// the change is a true reversal (Forward<->Reverse with neither side
-// Stopped), in which case the motor is stopped immediately and a protective
-// pause (config::kMotorReversePauseMs) is observed before engaging the new
-// polarity — see data-model.md's state machine. Going to/from Stopped is
-// never subject to the pause, so a fail-safe STOP always stops immediately.
+// The steering servo is a positional 180° micro servo: it holds whatever
+// angle it's commanded to. A LEFT/RIGHT direction is still applied as a
+// bounded pulse (config::kServoTurnPulseMs) in tick() — long enough to swing
+// the steering linkage to its lock — after which tick() automatically
+// re-centers it (kServoNeutralAngleDeg), regardless of whether the Direction
+// is still LEFT/RIGHT. This gives the app's per-axis word protocol a
+// momentary tap-to-turn feel and avoids holding the servo stalled against
+// its mechanical end-stop indefinitely. The motor's polarity is applied
+// immediately in tick() UNLESS the change is a true reversal (Forward<->
+// Reverse with neither side Stopped), in which case the motor is stopped
+// immediately and a protective pause (config::kMotorReversePauseMs) is
+// observed before engaging the new polarity — see data-model.md's state
+// machine. Going to/from Stopped is never subject to the pause, so a
+// fail-safe STOP always stops immediately.
 class MotorServoVehicleOutput : public IVehicleOutput {
  public:
   enum class MotorPolarity { Stopped, Forward, Reverse };
@@ -93,16 +95,25 @@ class MotorServoVehicleOutput : public IVehicleOutput {
     }
   }
 
+  // Mirrors Arduino's map(): scales a value from an input range to an output
+  // range. Reimplemented locally (rather than relying on Arduino.h's map())
+  // so this header still compiles for native/host unit tests.
+  static int mapRange(int value, int inMin, int inMax, int outMin, int outMax) {
+    return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
+  }
+
   static int servoAngleFor(Direction direction) {
     switch (direction) {
       case Direction::Left:
       case Direction::ForwardLeft:
       case Direction::BackwardLeft:
-        return config::kServoLeftAngleDeg;
+        return mapRange(config::kSteerMin, config::kSteerMin, config::kSteerMax,
+                         config::kServoLeftAngleDeg, config::kServoRightAngleDeg);
       case Direction::Right:
       case Direction::ForwardRight:
       case Direction::BackwardRight:
-        return config::kServoRightAngleDeg;
+        return mapRange(config::kSteerMax, config::kSteerMin, config::kSteerMax,
+                         config::kServoLeftAngleDeg, config::kServoRightAngleDeg);
       default:
         return config::kServoNeutralAngleDeg;
     }

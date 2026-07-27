@@ -82,6 +82,11 @@ void loop() {
   if (transport.readLine(line)) {
     DriveCommand cmd;
     if (commandAssembler.apply(line, cmd) == ParseResult::Ok) {
+      if (cmd.steer < 0) {
+        Serial.println("steer command received: LEFT");
+      } else if (cmd.steer > 0) {
+        Serial.println("steer command received: RIGHT");
+      }
       emitDirection(control.onCommand(cmd, millis()));
     }
   }

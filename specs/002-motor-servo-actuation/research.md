@@ -75,18 +75,27 @@ rejected: it would make steering feel laggy and has no remaining wiring-verifica
 the bring-up test itself is deleted.
 
 **Superseded during on-device validation**: this assumed the servo was positional (holds a
-commanded angle while powered, like a normal RC steering servo). On-device testing showed it is
-actually continuous-rotation (360°): a non-neutral pulse commands a spin *speed*, not a held
-position, so snapping to `kServoLeftAngleDeg`/`kServoRightAngleDeg` and leaving it there spins the
-servo forever the instant any turn direction is decided — since nothing else ever tells it to
-stop, this can be effectively permanent (the app's per-axis word protocol has no explicit
-"release"/"center" command; the axis just latches until a different command changes it). Fixed by
-giving the servo a bounded-pulse state machine in `MotorServoVehicleOutput` (mirroring the motor's
-`tick()`-driven timing, for a different reason): a turn angle starts a
-`config::kServoTurnPulseMs` timer, and once it elapses with no new angle applied, `tick()`
-force-writes `kServoNeutralAngleDeg` again — self-stopping regardless of how long the app keeps
-sending (or fails to release) `LEFT`/`RIGHT`. Reaching `kServoNeutralAngleDeg` still applies
-immediately, per the original decision above.
+commanded angle while powered, like a normal RC steering servo). On-device testing with the
+original bring-up hardware showed it was actually continuous-rotation (360°): a non-neutral pulse
+commanded a spin *speed*, not a held position, so snapping to `kServoLeftAngleDeg`/
+`kServoRightAngleDeg` and leaving it there spun the servo forever the instant any turn direction
+was decided — since nothing else ever told it to stop, this could be effectively permanent (the
+app's per-axis word protocol has no explicit "release"/"center" command; the axis just latches
+until a different command changes it). Fixed by giving the servo a bounded-pulse state machine in
+`MotorServoVehicleOutput` (mirroring the motor's `tick()`-driven timing, for a different reason): a
+turn angle starts a `config::kServoTurnPulseMs` timer, and once it elapses with no new angle
+applied, `tick()` force-writes `kServoNeutralAngleDeg` again — self-stopping regardless of how long
+the app keeps sending (or fails to release) `LEFT`/`RIGHT`. Reaching `kServoNeutralAngleDeg` still
+applies immediately, per the original decision above.
+
+**Re-superseded — hardware swapped to a positional servo**: the rig now uses a genuine positional
+90g/180° micro servo (SG90-class), confirmed on-device to hold a commanded angle correctly —
+`kServoLeftAngleDeg`/`kServoRightAngleDeg` now represent real physical lock positions
+(`kServoMinAngleDeg`/`kServoMaxAngleDeg`), not a spin speed. The bounded-pulse state machine from
+the previous supersession is deliberately kept, but its purpose changed: instead of preventing an
+unbounded spin, it now gives the app's per-axis word protocol a momentary tap-to-turn feel and
+avoids holding the servo stalled (and drawing stall current) against its mechanical end-stop for as
+long as the app keeps latching `LEFT`/`RIGHT`.
 
 ## 5. Direction → actuation mapping
 
