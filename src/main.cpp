@@ -4,6 +4,7 @@
 #include "control/connection_monitor.h"
 #include "control/direction_control.h"
 #include "hardware/gpio_motor_driver.h"
+#include "hardware/led_connection_output.h"
 #include "hardware/motor_servo_vehicle_output.h"
 #include "hardware/pwm_steering_servo.h"
 #include "hardware/serial_connection_output.h"
@@ -23,6 +24,7 @@ SerialDirectionOutput output;
 DirectionControl control;
 ConnectionMonitor connectionMonitor;
 SerialConnectionOutput connectionOutput;
+LedConnectionOutput ledOutput;
 
 GpioMotorDriver motorDriver;
 PwmSteeringServo steeringServo;
@@ -64,6 +66,7 @@ void setup() {
 
   motorDriver.begin();
   steeringServo.begin();
+  ledOutput.begin();
 
   Serial.println("READY: ambullrc-esp32");
 }
@@ -72,6 +75,7 @@ void loop() {
   ConnectionEvent connectionEvent = connectionMonitor.onTick(transport.connected());
   if (connectionEvent != ConnectionEvent::None) {
     connectionOutput.emit(connectionEvent, transport.deviceId());
+    ledOutput.emit(connectionEvent, transport.deviceId());
   }
 
   std::string line;

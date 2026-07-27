@@ -56,4 +56,9 @@ constexpr int kMotorPinB = 19;
 // to avoid a back-EMF current spike stressing the L9110S bridge.
 constexpr unsigned long kMotorReversePauseMs = 300;
 
+// Connection status LED (Hardware layer: LedConnectionOutput). Not a
+// strapping pin (avoids GPIO0/2/5/12/15), so it can't interfere with boot
+// mode selection.
+constexpr int kLedPin = 14;
+
 }  // namespace config
