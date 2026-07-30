@@ -94,6 +94,19 @@ src/                               # Firmware source
 test/                              # Tests (native/host-runnable)
 ```
 
+## Electronic components
+- 2 LM2596
+- C1 (1000µF) voltage rating vs VCC-A (~6V)
+- C2 (100µF) voltage rating vs VCC-B (~5V)
+- L9110S 
+- Red LED (1) to signal that the system is powered on;
+- Resistor (220-330Ω) for LED1;
+- Green LED (2) to signal that the ESP32 is sucessfully connected to the RC app 
+- Micro servo motor SG 90
+- DC motor
+
+[Schematics](https://github.com/felipexw/ambullRC-ESP32/blob/main/schematic_final_en.svg)
+
 ## Project principles
 
 The non-negotiable rules for this project live in
