@@ -9,6 +9,8 @@ and drives two motors on a hobby car:
 This is a hobby side project. The guiding rule is **simplicity with quality**: build only what
 is needed (YAGNI), keep the architecture small, and cover every feature with automated tests. The Android App which is the remote controller for this device and its componentes are [here](https://github.com/felipexw/ambullRC-ESP32).
 
+[demo (WIP)](https://www.youtube.com/watch?v=EBZQrzWVDxw&list=PLal27zLmiqjQ&index=1)
+
 ## Status
 
 Toolchain is set up (PlatformIO, `esp32dev` board). `src/main.cpp` is currently a smoke-test
