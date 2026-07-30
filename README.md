@@ -7,7 +7,7 @@ and drives two motors on a hobby car:
 - **1 DC motor** — engine (drive) control
 
 This is a hobby side project. The guiding rule is **simplicity with quality**: build only what
-is needed (YAGNI), keep the architecture small, and cover every feature with automated tests.
+is needed (YAGNI), keep the architecture small, and cover every feature with automated tests. The Android App which is the remote controller for this device and its componentes are [here](https://github.com/felipexw/ambullRC-ESP32).
 
 ## Status
 
