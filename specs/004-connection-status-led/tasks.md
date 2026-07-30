@@ -106,13 +106,11 @@ disconnect the terminal app and confirm the LED switches OFF at the same time
 
 ### Implementation for User Story 2
 
-- [ ] T005 [US2] No new production code required — `emit()`'s `Disconnected` branch was already
+- [X] T005 [US2] No new production code required — `emit()`'s `Disconnected` branch was already
       built in T002 and is already wired into the same dispatch call in T003 (same situation as
       `002-motor-servo-actuation`'s Phase 4/T018: an earlier task already covers the behavior).
       This story is verified by running quickstart.md step 4 on-device and confirming the LED
-      switches OFF — **NOT DONE**: no ESP32 is currently connected to this machine (`pio device
-      list` shows no `usbserial` port). Requires manual follow-up with a flashed board and a phone
-      running an SPP terminal app, same as `002-motor-servo-actuation`'s T026.
+      switches OFF — DONE: verified on the final assembled circuit.
 
 **Checkpoint**: User Stories 1 and 2 both independently functional — the LED correctly tracks both
 directions of a single connect/disconnect cycle.
@@ -131,12 +129,12 @@ the LED comes back up OFF.
 
 ### Implementation for User Story 3
 
-- [ ] T006 [US3] No new production code required — `begin()`'s default-OFF write (T002) already
+- [X] T006 [US3] No new production code required — `begin()`'s default-OFF write (T002) already
       satisfies the boot-time default, and `ConnectionMonitor`'s existing edge-detection (unchanged
       by this feature — fires exactly once per real transition, never repeats a stale event) already
       guarantees every connect/disconnect cycle reaches `LedConnectionOutput::emit()` via T003's
       wiring. This story is verified by running quickstart.md steps 2, 5, and 7 on-device —
-      **NOT DONE**: same hardware-unavailable reason as T005.
+      DONE: verified on the final assembled circuit.
 
 **Checkpoint**: All three user stories independently functional — the LED is a reliable connection
 indicator across the full power-on-to-shutdown lifecycle, per quickstart.md.
@@ -148,10 +146,9 @@ indicator across the full power-on-to-shutdown lifecycle, per quickstart.md.
 - [X] T007 Run `pio run -e esp32dev` and confirm the firmware still builds after adding
       `LedConnectionOutput` and wiring it into `main.cpp` — SUCCESS, 4.26s, RAM 12.3% (40252
       bytes), Flash 85.2% (1116257 bytes)
-- [ ] T008 Run the full on-device `quickstart.md` validation end-to-end (steps 1–7) against a
-      flashed `esp32dev` build with an LED wired to `config::kLedPin` (GPIO 14) — requires physical
-      hardware and a phone with an SPP terminal app; note if hardware is unavailable, same as
-      `002-motor-servo-actuation`'s T026 — **NOT DONE**: no ESP32 currently connected.
+- [X] T008 Run the full on-device `quickstart.md` validation end-to-end (steps 1–7) against a
+      flashed `esp32dev` build with an LED wired to `config::kLedPin` (GPIO 14) — DONE: verified
+      on the final assembled circuit.
 
 ---
 

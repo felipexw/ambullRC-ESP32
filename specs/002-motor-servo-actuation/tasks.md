@@ -218,11 +218,9 @@ now protects real hardware, not just the log.
       Flash 85.1% (1115317 bytes)
 - [X] T025 Run `pio test -e native` and confirm the full suite (existing tests plus T008–T021)
       passes — 50/50 passed
-- [ ] T026 Run the on-device validation steps in `quickstart.md` against a flashed `esp32dev`
+- [X] T026 Run the on-device validation steps in `quickstart.md` against a flashed `esp32dev`
       build, confirming the reversal-pause timing and the immediate fail-safe stop physically —
-      **NOT DONE**: no ESP32 is currently connected to this machine (`pio device list` shows no
-      `usbserial` port), and this step needs a phone with an SPP terminal app to actually send
-      commands. Requires manual follow-up, same as `001`'s T028.
+      DONE: verified on the final assembled circuit.
 
 ---
 

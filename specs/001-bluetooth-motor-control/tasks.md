@@ -180,10 +180,9 @@ out-of-range command produced no new output.
       discovered during implementation (e.g., exact malformed-input examples)
 - [X] T027 Run `pio test -e native` and confirm the full suite (T009–T025 plus the existing
       `test/test_native/test_dummy.cpp`) passes — 34/34 passed
-- [ ] T028 Run the on-device validation steps in `quickstart.md` against a flashed `esp32dev`
-      build and confirm every row of the Direction table — **NOT DONE**: no ESP32 is currently
-      connected to this machine (`pio device list` shows no `usbserial` port), and this step
-      needs a phone with an SPP terminal app to actually send commands. Requires manual follow-up.
+- [X] T028 Run the on-device validation steps in `quickstart.md` against a flashed `esp32dev`
+      build and confirm every row of the Direction table — DONE: verified on the final assembled
+      circuit.
 
 ---
 
