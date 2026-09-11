@@ -12,20 +12,24 @@ class PwmSteeringServo : public ISteeringServo {
   void begin() {
     servo_.setPeriodHertz(50);
     servo_.attach(config::kServoPin, config::kServoMinPulseUs, config::kServoMaxPulseUs);
-    // Positional 180° micro servo: it holds whatever angle it's told, so
-    // (unlike a continuous-rotation unit) it doesn't need a continuous
-    // "stop" pulse driven at boot — the first real command sets it.
-    // setAngleDeg(config::kServoNeutralAngleDeg);
+    // Positional 180° micro servo: it holds whatever angle it's told, so it
+    // doesn't need a continuous "stop" pulse driven at boot — but it also
+    // doesn't know where it physically is after a reset, so it stays put at
+    // whatever angle it was left at until the first real command arrives.
+    // Explicitly recenter it here so every boot starts from a known state.
+    setAngleDeg(config::kServoNeutralAngleDeg);
   }
 
   void setAngleDeg(int angleDeg) override {
     angleDeg = constrain(angleDeg, config::kServoMinAngleDeg, config::kServoMaxAngleDeg);
-    if (!hasWritten_ || angleDeg != lastAngleDeg_) {
-      Serial.print("servo angle: ");
-      Serial.println(angleDeg);
-      hasWritten_ = true;
-      lastAngleDeg_ = angleDeg;
-    }
+    // Skip re-issuing the same angle: the servo is already there, and a
+    // redundant write is, at best, wasted PWM churn — see i_steering_servo.h.
+    if (hasWritten_ && angleDeg == lastAngleDeg_) return;
+    hasWritten_ = true;
+    lastAngleDeg_ = angleDeg;
+
+    Serial.print("servo angle: ");
+    Serial.println(angleDeg);
     // The stop state is driven by an explicit calibrated pulse rather than
     // through the angle->pulse map — see kServoStopPulseUs in config.h.
     if (angleDeg == config::kServoNeutralAngleDeg) {
