@@ -84,6 +84,8 @@ extern void test_assembler_right_sets_steer_max(void);
 extern void test_assembler_word_commands_are_case_insensitive(void);
 extern void test_assembler_up_then_right_preserves_throttle(void);
 extern void test_assembler_right_then_up_preserves_steer(void);
+extern void test_assembler_stop_zeros_throttle_preserves_steer(void);
+extern void test_assembler_center_zeros_steer_preserves_throttle(void);
 extern void test_assembler_numeric_command_overwrites_both_axes(void);
 extern void test_assembler_rejects_unrecognized_word(void);
 extern void test_assembler_reset_clears_stale_axis_state(void);
@@ -165,6 +167,8 @@ int main(int argc, char **argv) {
   RUN_TEST(test_assembler_word_commands_are_case_insensitive);
   RUN_TEST(test_assembler_up_then_right_preserves_throttle);
   RUN_TEST(test_assembler_right_then_up_preserves_steer);
+  RUN_TEST(test_assembler_stop_zeros_throttle_preserves_steer);
+  RUN_TEST(test_assembler_center_zeros_steer_preserves_throttle);
   RUN_TEST(test_assembler_numeric_command_overwrites_both_axes);
   RUN_TEST(test_assembler_rejects_unrecognized_word);
   RUN_TEST(test_assembler_reset_clears_stale_axis_state);

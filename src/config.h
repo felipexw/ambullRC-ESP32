@@ -20,10 +20,9 @@ constexpr int kThrottleMax = 100;
 // rig originally used. kServoNeutralAngleDeg is the centered/straight
 // position, used both at boot and as the fail-safe/straight-driving state.
 constexpr int kServoPin = 13;
-// Mechanical lock-to-lock range for this test rig: the linkage can't safely
-// travel past these without binding, so this is also the hard clamp applied
-// in PwmSteeringServo::setAngleDeg().
-constexpr int kServoMinAngleDeg = 5;
+// Lock-to-lock range for this test rig, also the hard clamp applied in
+// PwmSteeringServo::setAngleDeg().
+constexpr int kServoMinAngleDeg = 0;
 constexpr int kServoMaxAngleDeg = 180;
 constexpr int kServoNeutralAngleDeg = 90;
 constexpr int kServoMinPulseUs = 500;
@@ -44,7 +43,7 @@ constexpr int kServoStopPulseUs = 1500;
 // tap-to-turn behavior that also avoids stalling the servo against its
 // mechanical end-stop indefinitely. Tune to how long the physical steering
 // linkage takes to swing to its lock.
-constexpr unsigned long kServoTurnPulseMs = 300;
+constexpr unsigned long kServoTurnPulseMs = 150;
 
 // L9110S DC motor (Hardware layer: GpioMotorDriver).
 constexpr int kMotorPinA = 18;

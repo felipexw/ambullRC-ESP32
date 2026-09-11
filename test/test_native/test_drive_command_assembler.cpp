@@ -89,6 +89,36 @@ void test_assembler_numeric_command_overwrites_both_axes(void) {
   TEST_ASSERT_EQUAL(0, cmd.throttle);
 }
 
+// STOP/CENTER are the explicit release signals: pressing a button then
+// releasing it must zero only that button's axis, immediately, without
+// touching the other axis.
+
+void test_assembler_stop_zeros_throttle_preserves_steer(void) {
+  DriveCommandAssembler assembler;
+  DriveCommand cmd;
+
+  assembler.apply("UP", cmd);
+  assembler.apply("RIGHT", cmd);
+
+  TEST_ASSERT_EQUAL(static_cast<int>(ParseResult::Ok),
+                     static_cast<int>(assembler.apply("STOP", cmd)));
+  TEST_ASSERT_EQUAL(0, cmd.throttle);
+  TEST_ASSERT_EQUAL(config::kSteerMax, cmd.steer);
+}
+
+void test_assembler_center_zeros_steer_preserves_throttle(void) {
+  DriveCommandAssembler assembler;
+  DriveCommand cmd;
+
+  assembler.apply("UP", cmd);
+  assembler.apply("RIGHT", cmd);
+
+  TEST_ASSERT_EQUAL(static_cast<int>(ParseResult::Ok),
+                     static_cast<int>(assembler.apply("CENTER", cmd)));
+  TEST_ASSERT_EQUAL(0, cmd.steer);
+  TEST_ASSERT_EQUAL(config::kThrottleMax, cmd.throttle);
+}
+
 void test_assembler_rejects_unrecognized_word(void) {
   DriveCommandAssembler assembler;
   DriveCommand cmd;

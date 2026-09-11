@@ -15,13 +15,13 @@ One command per line, ASCII, newline (`\n`) terminated. Two forms are accepted, 
 ### Word commands (what the Android app actually sends)
 
 ```
-UP | DOWN | LEFT | RIGHT
+UP | DOWN | LEFT | RIGHT | STOP | CENTER
 ```
 
-Case-insensitive. Each word updates **only its own axis** — `UP`/`DOWN` set the throttle axis,
-`LEFT`/`RIGHT` set the steer axis — the other axis keeps its last known value. This is what makes
-e.g. driving forward (`UP`) and then steering right (`RIGHT`) keep the car moving forward while it
-turns, instead of one command resetting the other axis to zero:
+Case-insensitive. Each word updates **only its own axis** — `UP`/`DOWN`/`STOP` set the throttle
+axis, `LEFT`/`RIGHT`/`CENTER` set the steer axis — the other axis keeps its last known value. This
+is what makes e.g. driving forward (`UP`) and then steering right (`RIGHT`) keep the car moving
+forward while it turns, instead of one command resetting the other axis to zero:
 
 | Word | Effect |
 |------|--------|
@@ -29,11 +29,17 @@ turns, instead of one command resetting the other axis to zero:
 | `DOWN` | `throttle = kThrottleMin` (full reverse); `steer` unchanged |
 | `LEFT` | `steer = kSteerMin` (full left); `throttle` unchanged |
 | `RIGHT` | `steer = kSteerMax` (full right); `throttle` unchanged |
+| `STOP` | `throttle = 0`; `steer` unchanged — send the instant the throttle button is released |
+| `CENTER` | `steer = 0`; `throttle` unchanged — send the instant the steer button is released |
 
-There is no explicit "stop"/"center" word — releasing a button simply means the app stops sending
-that word, and the vehicle returns to a stopped/centered state via the existing fail-safe timeout
-(`kCommandTimeoutMs`), which also resets both axes so a stale pre-timeout value can't be
-resurrected by the next word command.
+`STOP`/`CENTER` are the explicit "finger lifted" release signals for their axis. The app SHOULD
+send one immediately on button release rather than relying on the connection-loss fail-safe
+timeout (`kCommandTimeoutMs`) to zero the axis — that timeout exists to stop the vehicle when the
+link itself drops, not as a substitute for a release event, and waiting on it adds up to
+`kCommandTimeoutMs` of latency after the finger lifts. `kCommandTimeoutMs` still applies as a
+backstop if the app stops sending commands entirely (e.g. it crashes or the connection drops
+mid-turn) and also resets both axes so a stale pre-timeout value can't be resurrected by the next
+word command.
 
 ### Numeric pairs (manual/terminal testing)
 
@@ -53,6 +59,8 @@ sending an exact combined state by hand from a generic SPP terminal app.
 |------|---------|
 | `UP` | Throttle set to full forward |
 | `RIGHT` | Steer set to full right |
+| `STOP` | Throttle button released — throttle set to 0, steer unchanged |
+| `CENTER` | Steer button released — steer set to 0, throttle unchanged |
 | `0,0` | Straight, stopped (both axes explicitly) |
 | `0,100` | Straight, full forward (both axes explicitly) |
 | `-50,0` | Left, no throttle (both axes explicitly) |

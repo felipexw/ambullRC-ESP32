@@ -27,6 +27,10 @@ ParseResult DriveCommandAssembler::apply(const std::string& line, DriveCommand& 
     steer_ = config::kSteerMin;
   } else if (word == "RIGHT") {
     steer_ = config::kSteerMax;
+  } else if (word == "STOP") {
+    throttle_ = 0;
+  } else if (word == "CENTER") {
+    steer_ = 0;
   } else {
     DriveCommand parsed;
     ParseResult result = parseLine(line, parsed);
