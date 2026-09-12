@@ -17,4 +17,8 @@ class ITransport {
   // Non-blocking poll: returns true and sets `outLine` if a full line (sans
   // newline) is available this call; returns false otherwise.
   virtual bool readLine(std::string& outLine) = 0;
+
+  // Sends one line (newline-terminated on the wire) to the connected peer,
+  // if any. A no-op if nothing is connected.
+  virtual void writeLine(const std::string& line) = 0;
 };

@@ -34,6 +34,8 @@ class BluetoothTransport : public ITransport {
     return false;
   }
 
+  void writeLine(const std::string& line) override { bt_.println(line.c_str()); }
+
  private:
   // register_callback() takes a plain function pointer (no captured state),
   // so the single BluetoothTransport instance is tracked via a static

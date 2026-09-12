@@ -107,6 +107,24 @@ test/                              # Tests (native/host-runnable)
 
 [Schematics](https://github.com/felipexw/ambullRC-ESP32/blob/main/schematic_final_en.svg)
 
+## Pinout
+
+All pins are defined in [`src/config.h`](src/config.h).
+
+| GPIO | Actuator                          | Notes                                                        |
+|------|------------------------------------|---------------------------------------------------------------|
+| 12   | Green LED — BLE connection status  | `kLedPin`; on when connected to the RC app                    |
+| 13   | Micro servo (SG90) — steering      | `kServoPin`; PWM control signal                                |
+| 18   | L9110S — DC motor input A          | `kMotorPinA`; digital drive signal (forward/reverse/stop)     |
+| 19   | L9110S — DC motor input B          | `kMotorPinB`; digital drive signal (forward/reverse/stop)     |
+| 21   | Auxiliary light 1                  | `kLight1Pin`; digital on/off                                   |
+| 22   | Auxiliary light 2                  | `kLight2Pin`; digital on/off                                   |
+| 23   | Auxiliary light 3                  | `kLight3Pin`; digital on/off                                   |
+| 25   | Auxiliary light 4                  | `kLight4Pin`; digital on/off                                   |
+
+The red power-on LED is wired directly across VCC (through its current-limiting resistor) and
+isn't driven by a GPIO.
+
 ## Project principles
 
 The non-negotiable rules for this project live in

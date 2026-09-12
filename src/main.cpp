@@ -3,6 +3,8 @@
 
 #include "control/connection_monitor.h"
 #include "control/direction_control.h"
+#include "control/lights_control.h"
+#include "hardware/gpio_lights_output.h"
 #include "hardware/gpio_motor_driver.h"
 #include "hardware/led_connection_output.h"
 #include "hardware/motor_servo_vehicle_output.h"
@@ -11,6 +13,8 @@
 #include "hardware/serial_direction_output.h"
 #include "protocol/command_parser.h"
 #include "protocol/drive_command_assembler.h"
+#include "protocol/light_command_parser.h"
+#include "protocol/lights_report_formatter.h"
 #include "transport/bluetooth_transport.h"
 
 // Bluetooth Motor Control — see specs/001-bluetooth-motor-control/plan.md
@@ -30,11 +34,25 @@ GpioMotorDriver motorDriver;
 PwmSteeringServo steeringServo;
 MotorServoVehicleOutput hardwareOutput(motorDriver, steeringServo);
 
+LightsControl lightsControl;
+GpioLightsOutput lightsOutput;
+
 // Emits the decided direction to both the serial log and the real hardware,
 // so neither can drift out of sync at a call site.
 void emitDirection(Direction direction) {
   output.emit(direction);
   hardwareOutput.emit(direction);
+}
+
+// Sends the lights state report to the app over Bluetooth, logging exactly
+// what was sent and when — the two writeLine() call sites below (on a real
+// light change, and on a fresh connection) both go through here so neither
+// can log something different from what actually went out.
+void sendLightsReport(const LightsState& state) {
+  std::string report = formatLightsReport(state);
+  Serial.print("sent to app: ");
+  Serial.println(report.c_str());
+  transport.writeLine(report);
 }
 
 // Distinguishes an intentional power cycle from an unexpected reset (e.g.
@@ -67,6 +85,7 @@ void setup() {
   motorDriver.begin();
   steeringServo.begin();
   ledOutput.begin();
+  lightsOutput.begin();
 
   Serial.println("READY: ambullrc-esp32");
 }
@@ -76,18 +95,44 @@ void loop() {
   if (connectionEvent != ConnectionEvent::None) {
     connectionOutput.emit(connectionEvent, transport.deviceId());
     ledOutput.emit(connectionEvent, transport.deviceId());
+    if (connectionEvent == ConnectionEvent::Connected) {
+      sendLightsReport(lightsControl.state());
+    }
   }
 
   std::string line;
   if (transport.readLine(line)) {
-    DriveCommand cmd;
-    if (commandAssembler.apply(line, cmd) == ParseResult::Ok) {
-      if (cmd.steer < 0) {
-        Serial.println("steer command received: LEFT");
-      } else if (cmd.steer > 0) {
-        Serial.println("steer command received: RIGHT");
+    LightCommand lightCmd;
+    if (parseLightCommand(line, lightCmd) == ParseResult::Ok) {
+      LightsState lightsState;
+      bool lightsChanged = lightsControl.apply(lightCmd, lightsState);
+      lightsOutput.apply(lightsState);
+
+      Serial.print("received: ");
+      Serial.println(line.c_str());
+      Serial.println(" -> LIGHT1: ");
+      Serial.print(lightsState[0] ? "ON" : "OFF");
+      Serial.print(", LIGHT2: ");
+      Serial.print(lightsState[1] ? "ON" : "OFF");
+      Serial.print(", LIGHT3: ");
+      Serial.print(lightsState[2] ? "ON" : "OFF");
+      Serial.print(", LIGHT4: ");
+      Serial.println(lightsState[3] ? "ON" : "OFF");
+
+      if (lightsChanged) sendLightsReport(lightsState);
+    } else {
+      Serial.print("received: ");
+      Serial.println(line.c_str());
+
+      DriveCommand cmd;
+      if (commandAssembler.apply(line, cmd) == ParseResult::Ok) {
+        if (cmd.steer < 0) {
+          Serial.println("steer command received: LEFT");
+        } else if (cmd.steer > 0) {
+          Serial.println("steer command received: RIGHT");
+        }
+        emitDirection(control.onCommand(cmd, millis()));
       }
-      emitDirection(control.onCommand(cmd, millis()));
     }
   }
 

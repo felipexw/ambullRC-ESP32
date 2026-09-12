@@ -90,6 +90,35 @@ extern void test_assembler_numeric_command_overwrites_both_axes(void);
 extern void test_assembler_rejects_unrecognized_word(void);
 extern void test_assembler_reset_clears_stale_axis_state(void);
 
+// test_light_command_parser.cpp
+extern void test_light_parses_light_on(void);
+extern void test_light_parses_light_off(void);
+extern void test_light_parses_case_insensitively(void);
+extern void test_light_rejects_existing_drive_words_as_malformed(void);
+extern void test_light_rejects_numeric_pair_as_malformed(void);
+extern void test_light_rejects_garbage_as_malformed(void);
+extern void test_light_rejects_per_light_words_as_malformed(void);
+
+// test_lights_control.cpp
+extern void test_lights_control_defaults_all_off(void);
+extern void test_lights_control_on_command_turns_all_lights_on(void);
+extern void test_lights_control_off_command_turns_all_lights_off(void);
+extern void test_lights_control_repeat_command_is_a_no_op(void);
+extern void test_lights_control_state_reflects_last_applied_command(void);
+
+// test_light_command_to_report_flow.cpp
+extern void test_light_toggle_flow_on_command_turns_on_all_lights(void);
+extern void test_light_toggle_flow_non_light_line_does_not_touch_lights(void);
+extern void test_light_toggle_flow_sends_report_only_on_change(void);
+extern void test_light_toggle_flow_off_command_sends_light_off(void);
+extern void test_lights_report_sent_on_connect(void);
+
+// test_lights_report_formatter.cpp
+extern void test_format_all_off_is_light_off(void);
+extern void test_format_all_on_is_light_on(void);
+extern void test_format_single_light_on_is_light_off(void);
+extern void test_format_three_of_four_on_is_still_light_off(void);
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -172,6 +201,31 @@ int main(int argc, char **argv) {
   RUN_TEST(test_assembler_numeric_command_overwrites_both_axes);
   RUN_TEST(test_assembler_rejects_unrecognized_word);
   RUN_TEST(test_assembler_reset_clears_stale_axis_state);
+
+  RUN_TEST(test_light_parses_light_on);
+  RUN_TEST(test_light_parses_light_off);
+  RUN_TEST(test_light_parses_case_insensitively);
+  RUN_TEST(test_light_rejects_existing_drive_words_as_malformed);
+  RUN_TEST(test_light_rejects_numeric_pair_as_malformed);
+  RUN_TEST(test_light_rejects_garbage_as_malformed);
+  RUN_TEST(test_light_rejects_per_light_words_as_malformed);
+
+  RUN_TEST(test_lights_control_defaults_all_off);
+  RUN_TEST(test_lights_control_on_command_turns_all_lights_on);
+  RUN_TEST(test_lights_control_off_command_turns_all_lights_off);
+  RUN_TEST(test_lights_control_repeat_command_is_a_no_op);
+  RUN_TEST(test_lights_control_state_reflects_last_applied_command);
+
+  RUN_TEST(test_light_toggle_flow_on_command_turns_on_all_lights);
+  RUN_TEST(test_light_toggle_flow_non_light_line_does_not_touch_lights);
+  RUN_TEST(test_light_toggle_flow_sends_report_only_on_change);
+  RUN_TEST(test_light_toggle_flow_off_command_sends_light_off);
+  RUN_TEST(test_lights_report_sent_on_connect);
+
+  RUN_TEST(test_format_all_off_is_light_off);
+  RUN_TEST(test_format_all_on_is_light_on);
+  RUN_TEST(test_format_single_light_on_is_light_off);
+  RUN_TEST(test_format_three_of_four_on_is_still_light_off);
 
   return UNITY_END();
 }

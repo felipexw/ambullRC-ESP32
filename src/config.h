@@ -58,4 +58,13 @@ constexpr unsigned long kMotorReversePauseMs = 300;
 // mode selection.
 constexpr int kLedPin = 12;
 
+// Auxiliary lights (Hardware layer: GpioLightsOutput). Four independent
+// GPIOs, none a strapping pin (avoids GPIO0/2/5/12/15) or input-only
+// (avoids GPIO34-39), so none can interfere with boot mode selection.
+constexpr int kLightCount = 4;
+constexpr int kLight1Pin = 21;
+constexpr int kLight2Pin = 22;
+constexpr int kLight3Pin = 23;
+constexpr int kLight4Pin = 25;
+
 }  // namespace config
