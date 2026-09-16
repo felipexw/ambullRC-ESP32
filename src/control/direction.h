@@ -14,6 +14,27 @@ enum class Direction {
   BackwardRight,
 };
 
+// True only when the DC motor is actually driving (Forward/Backward, with or
+// without steering) — steering alone (Left/Right) or Stop leave the motor
+// idle. Used to drive the automatic engine tone (IToneOutput::
+// setEngineRunning): running while the motor is engaged, idle otherwise.
+inline bool motorEngaged(Direction direction) {
+  switch (direction) {
+    case Direction::Forward:
+    case Direction::Backward:
+    case Direction::ForwardLeft:
+    case Direction::ForwardRight:
+    case Direction::BackwardLeft:
+    case Direction::BackwardRight:
+      return true;
+    case Direction::Stop:
+    case Direction::Left:
+    case Direction::Right:
+      return false;
+  }
+  return false;
+}
+
 inline const char* toString(Direction direction) {
   switch (direction) {
     case Direction::Stop:

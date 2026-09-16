@@ -34,6 +34,8 @@ extern void test_direction_forward_left(void);
 extern void test_direction_forward_right(void);
 extern void test_direction_backward_left(void);
 extern void test_direction_backward_right(void);
+extern void test_motor_engaged_true_for_forward_and_backward(void);
+extern void test_motor_engaged_false_for_stop_and_steering_alone(void);
 extern void test_control_onCommand_returns_decided_direction(void);
 extern void test_control_onTick_stops_once_on_disconnect(void);
 extern void test_control_onTick_stops_once_on_timeout(void);
@@ -119,6 +121,35 @@ extern void test_format_all_on_is_light_on(void);
 extern void test_format_single_light_on_is_light_off(void);
 extern void test_format_three_of_four_on_is_still_light_off(void);
 
+// test_tone_command_parser.cpp
+extern void test_tone_parses_horn(void);
+extern void test_tone_parses_case_insensitively(void);
+extern void test_tone_rejects_existing_drive_words_as_malformed(void);
+extern void test_tone_rejects_existing_light_words_as_malformed(void);
+extern void test_tone_rejects_numeric_pair_as_malformed(void);
+extern void test_tone_rejects_garbage_as_malformed(void);
+extern void test_tone_rejects_removed_siren_word_as_malformed(void);
+extern void test_tone_rejects_removed_engine_word_as_malformed(void);
+
+// test_tone_control.cpp
+extern void test_tone_control_honors_request_when_not_busy(void);
+extern void test_tone_control_ignores_request_while_busy(void);
+extern void test_tone_control_honors_request_again_once_no_longer_busy(void);
+
+// test_tone_command_to_output_flow.cpp
+extern void test_tone_flow_valid_trigger_plays_when_not_busy(void);
+extern void test_tone_flow_non_tone_line_does_not_trigger_playback(void);
+extern void test_tone_flow_retrigger_while_busy_is_ignored(void);
+extern void test_tone_flow_plays_again_once_no_longer_busy(void);
+
+// test_drive_to_engine_tone_flow.cpp
+extern void test_engine_tone_flow_defaults_to_idle(void);
+extern void test_engine_tone_flow_forward_sets_engine_running(void);
+extern void test_engine_tone_flow_backward_sets_engine_running(void);
+extern void test_engine_tone_flow_steering_alone_stays_idle(void);
+extern void test_engine_tone_flow_stop_returns_to_idle(void);
+extern void test_engine_tone_flow_disconnect_returns_to_idle(void);
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -152,6 +183,8 @@ int main(int argc, char **argv) {
   RUN_TEST(test_direction_forward_right);
   RUN_TEST(test_direction_backward_left);
   RUN_TEST(test_direction_backward_right);
+  RUN_TEST(test_motor_engaged_true_for_forward_and_backward);
+  RUN_TEST(test_motor_engaged_false_for_stop_and_steering_alone);
   RUN_TEST(test_control_onCommand_returns_decided_direction);
   RUN_TEST(test_control_onTick_stops_once_on_disconnect);
   RUN_TEST(test_control_onTick_stops_once_on_timeout);
@@ -226,6 +259,31 @@ int main(int argc, char **argv) {
   RUN_TEST(test_format_all_on_is_light_on);
   RUN_TEST(test_format_single_light_on_is_light_off);
   RUN_TEST(test_format_three_of_four_on_is_still_light_off);
+
+  RUN_TEST(test_tone_parses_horn);
+  RUN_TEST(test_tone_parses_case_insensitively);
+  RUN_TEST(test_tone_rejects_existing_drive_words_as_malformed);
+  RUN_TEST(test_tone_rejects_existing_light_words_as_malformed);
+  RUN_TEST(test_tone_rejects_numeric_pair_as_malformed);
+  RUN_TEST(test_tone_rejects_garbage_as_malformed);
+  RUN_TEST(test_tone_rejects_removed_siren_word_as_malformed);
+  RUN_TEST(test_tone_rejects_removed_engine_word_as_malformed);
+
+  RUN_TEST(test_tone_control_honors_request_when_not_busy);
+  RUN_TEST(test_tone_control_ignores_request_while_busy);
+  RUN_TEST(test_tone_control_honors_request_again_once_no_longer_busy);
+
+  RUN_TEST(test_tone_flow_valid_trigger_plays_when_not_busy);
+  RUN_TEST(test_tone_flow_non_tone_line_does_not_trigger_playback);
+  RUN_TEST(test_tone_flow_retrigger_while_busy_is_ignored);
+  RUN_TEST(test_tone_flow_plays_again_once_no_longer_busy);
+
+  RUN_TEST(test_engine_tone_flow_defaults_to_idle);
+  RUN_TEST(test_engine_tone_flow_forward_sets_engine_running);
+  RUN_TEST(test_engine_tone_flow_backward_sets_engine_running);
+  RUN_TEST(test_engine_tone_flow_steering_alone_stays_idle);
+  RUN_TEST(test_engine_tone_flow_stop_returns_to_idle);
+  RUN_TEST(test_engine_tone_flow_disconnect_returns_to_idle);
 
   return UNITY_END();
 }

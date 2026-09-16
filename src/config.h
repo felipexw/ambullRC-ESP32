@@ -67,4 +67,51 @@ constexpr int kLight2Pin = 22;
 constexpr int kLight3Pin = 23;
 constexpr int kLight4Pin = 25;
 
+// Onboard sound effects (Hardware layer: PwmToneOutput). A single GPIO
+// driving a speaker/buzzer via the ESP32's LEDC tone-generation peripheral
+// (the same PWM hardware family PwmSteeringServo uses) — not the built-in
+// analog DAC (fixed to GPIO25/26, which would collide with kLight4Pin) and
+// not an external I2S DAC/amp. Volume is fixed by a hardware trim
+// potentiometer downstream of this pin — there is no software volume
+// control.
+constexpr int kToneOutputPin = 26;
+// The installed Arduino-ESP32 core (2.x-generation LEDC API, per
+// framework-arduinoespressif32 @ 3.20017.241212) addresses LEDC by channel
+// number, not pin, separately from ledcAttachPin(). Channel 15 (the last of
+// 16) is used to stay clear of whatever low channel ESP32Servo auto-allocates
+// for the steering servo.
+constexpr int kToneLedcChannel = 15;
+
+// Horn: fixed duration and tone per explicit spec (FR-002/FR-003a). A
+// one-shot trigger, unlike the engine tone below.
+constexpr unsigned long kHornDurationMs = 1500;
+constexpr int kHornFreqHz = 420;
+
+// Engine: no longer a triggered one-shot effect — it plays continuously,
+// automatically reflecting the DC motor's current state
+// (IToneOutput::setEngineRunning), so there is no duration constant.
+//
+// Idle "V8 burble": firing frequency (Hz) = (RPM / 60) x (cylinders / 2); a
+// V8 at a Mustang-like idle of ~775 RPM fires at (775/60) x 4 ~= 52 Hz
+// (research.md §6) — the wobble around this base is what PwmToneOutput uses
+// to approximate the characteristic lopey idle. Plays whenever the DC motor
+// isn't engaged.
+constexpr int kEngineIdleBaseFreqHz = 52;
+constexpr int kEngineIdleWobbleFreqHz = 6;
+
+// "Running": a higher, rougher firing frequency approximating a
+// light-throttle cruise (~2200 RPM -> (2200/60) x 4 ~= 147 Hz), deliberately
+// distinct from the idle rumble above. Plays whenever the DC motor is
+// engaged (UP or DOWN), regardless of direction or steering.
+constexpr int kEngineRunningBaseFreqHz = 147;
+constexpr int kEngineRunningWobbleFreqHz = 15;
+
+// Horn-over-engine layering: a single LEDC channel can only output one
+// frequency at a time, so the horn is made to sound "on top of" the engine
+// by rapidly time-slicing between the horn tone and whichever engine tone is
+// currently playing, within each short window below, rather than silencing
+// the engine while the horn plays.
+constexpr unsigned long kToneLayerPeriodMs = 100;
+constexpr unsigned long kToneLayerHornSliceMs = 60;
+
 }  // namespace config

@@ -4,17 +4,20 @@
 #include "control/connection_monitor.h"
 #include "control/direction_control.h"
 #include "control/lights_control.h"
+#include "control/tone_control.h"
 #include "hardware/gpio_lights_output.h"
 #include "hardware/gpio_motor_driver.h"
 #include "hardware/led_connection_output.h"
 #include "hardware/motor_servo_vehicle_output.h"
 #include "hardware/pwm_steering_servo.h"
+#include "hardware/pwm_tone_output.h"
 #include "hardware/serial_connection_output.h"
 #include "hardware/serial_direction_output.h"
 #include "protocol/command_parser.h"
 #include "protocol/drive_command_assembler.h"
 #include "protocol/light_command_parser.h"
 #include "protocol/lights_report_formatter.h"
+#include "protocol/tone_command_parser.h"
 #include "transport/bluetooth_transport.h"
 
 // Bluetooth Motor Control — see specs/001-bluetooth-motor-control/plan.md
@@ -36,6 +39,9 @@ MotorServoVehicleOutput hardwareOutput(motorDriver, steeringServo);
 
 LightsControl lightsControl;
 GpioLightsOutput lightsOutput;
+
+ToneControl toneControl;
+PwmToneOutput toneOutput;
 
 // Emits the decided direction to both the serial log and the real hardware,
 // so neither can drift out of sync at a call site.
@@ -86,6 +92,7 @@ void setup() {
   steeringServo.begin();
   ledOutput.begin();
   lightsOutput.begin();
+  toneOutput.begin();
 
   Serial.println("READY: ambullrc-esp32");
 }
@@ -124,14 +131,22 @@ void loop() {
       Serial.print("received: ");
       Serial.println(line.c_str());
 
-      DriveCommand cmd;
-      if (commandAssembler.apply(line, cmd) == ParseResult::Ok) {
-        if (cmd.steer < 0) {
-          Serial.println("steer command received: LEFT");
-        } else if (cmd.steer > 0) {
-          Serial.println("steer command received: RIGHT");
+      if (parseHornCommand(line) == ParseResult::Ok) {
+        if (toneControl.apply(toneOutput.hornBusy())) {
+          toneOutput.playHorn();
         }
-        emitDirection(control.onCommand(cmd, millis()));
+      } else {
+        DriveCommand cmd;
+        if (commandAssembler.apply(line, cmd) == ParseResult::Ok) {
+          if (cmd.steer < 0) {
+            Serial.println("steer command received: LEFT");
+          } else if (cmd.steer > 0) {
+            Serial.println("steer command received: RIGHT");
+          }
+          Direction direction = control.onCommand(cmd, millis());
+          emitDirection(direction);
+          toneOutput.setEngineRunning(motorEngaged(direction));
+        }
       }
     }
   }
@@ -140,7 +155,9 @@ void loop() {
   if (control.onTick(transport.connected(), millis(), safeStateDirection)) {
     emitDirection(safeStateDirection);
     commandAssembler.reset();
+    toneOutput.setEngineRunning(motorEngaged(safeStateDirection));
   }
 
   hardwareOutput.tick(millis());
+  toneOutput.tick(millis());
 }
