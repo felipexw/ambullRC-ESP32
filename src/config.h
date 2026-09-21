@@ -83,35 +83,8 @@ constexpr int kToneOutputPin = 26;
 constexpr int kToneLedcChannel = 15;
 
 // Horn: fixed duration and tone per explicit spec (FR-002/FR-003a). A
-// one-shot trigger, unlike the engine tone below.
+// one-shot trigger; the output is silent otherwise.
 constexpr unsigned long kHornDurationMs = 1500;
 constexpr int kHornFreqHz = 420;
-
-// Engine: no longer a triggered one-shot effect — it plays continuously,
-// automatically reflecting the DC motor's current state
-// (IToneOutput::setEngineRunning), so there is no duration constant.
-//
-// Idle "V8 burble": firing frequency (Hz) = (RPM / 60) x (cylinders / 2); a
-// V8 at a Mustang-like idle of ~775 RPM fires at (775/60) x 4 ~= 52 Hz
-// (research.md §6) — the wobble around this base is what PwmToneOutput uses
-// to approximate the characteristic lopey idle. Plays whenever the DC motor
-// isn't engaged.
-constexpr int kEngineIdleBaseFreqHz = 52;
-constexpr int kEngineIdleWobbleFreqHz = 6;
-
-// "Running": a higher, rougher firing frequency approximating a
-// light-throttle cruise (~2200 RPM -> (2200/60) x 4 ~= 147 Hz), deliberately
-// distinct from the idle rumble above. Plays whenever the DC motor is
-// engaged (UP or DOWN), regardless of direction or steering.
-constexpr int kEngineRunningBaseFreqHz = 147;
-constexpr int kEngineRunningWobbleFreqHz = 15;
-
-// Horn-over-engine layering: a single LEDC channel can only output one
-// frequency at a time, so the horn is made to sound "on top of" the engine
-// by rapidly time-slicing between the horn tone and whichever engine tone is
-// currently playing, within each short window below, rather than silencing
-// the engine while the horn plays.
-constexpr unsigned long kToneLayerPeriodMs = 100;
-constexpr unsigned long kToneLayerHornSliceMs = 60;
 
 }  // namespace config

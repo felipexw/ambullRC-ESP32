@@ -145,7 +145,6 @@ void loop() {
           }
           Direction direction = control.onCommand(cmd, millis());
           emitDirection(direction);
-          toneOutput.setEngineRunning(motorEngaged(direction));
         }
       }
     }
@@ -155,7 +154,6 @@ void loop() {
   if (control.onTick(transport.connected(), millis(), safeStateDirection)) {
     emitDirection(safeStateDirection);
     commandAssembler.reset();
-    toneOutput.setEngineRunning(motorEngaged(safeStateDirection));
   }
 
   hardwareOutput.tick(millis());

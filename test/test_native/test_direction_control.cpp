@@ -51,25 +51,6 @@ void test_direction_backward_right(void) {
                      static_cast<int>(decideDirection({50, -50})));
 }
 
-// motorEngaged(): true only when the DC motor is actually driving
-// (Forward/Backward, with or without steering); steering alone or Stop
-// leave it idle — drives the automatic engine tone (main.cpp).
-
-void test_motor_engaged_true_for_forward_and_backward(void) {
-  TEST_ASSERT_TRUE(motorEngaged(Direction::Forward));
-  TEST_ASSERT_TRUE(motorEngaged(Direction::Backward));
-  TEST_ASSERT_TRUE(motorEngaged(Direction::ForwardLeft));
-  TEST_ASSERT_TRUE(motorEngaged(Direction::ForwardRight));
-  TEST_ASSERT_TRUE(motorEngaged(Direction::BackwardLeft));
-  TEST_ASSERT_TRUE(motorEngaged(Direction::BackwardRight));
-}
-
-void test_motor_engaged_false_for_stop_and_steering_alone(void) {
-  TEST_ASSERT_FALSE(motorEngaged(Direction::Stop));
-  TEST_ASSERT_FALSE(motorEngaged(Direction::Left));
-  TEST_ASSERT_FALSE(motorEngaged(Direction::Right));
-}
-
 // User Story 2: safe-state transitions on disconnect/timeout, STOP emitted
 // exactly once per transition, auto-resume on the next valid command.
 

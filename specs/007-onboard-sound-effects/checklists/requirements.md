@@ -44,3 +44,7 @@
   motor state (idle vs. running) instead of being a manual `ENGINE` trigger, and the horn was
   changed to play layered on top of the engine rather than being mutually exclusive with it. All
   checklist items re-verified against the revised spec and pass.
+- The engine sound (automatic idle/running tone) and the horn-over-engine layering were removed
+  after on-device testing; the spec is now horn-only, with the engine user story, FR-007–FR-010
+  (engine/layering), and SC-005 dropped and the remaining FRs renumbered. All checklist items
+  re-verified against the revised spec and pass.

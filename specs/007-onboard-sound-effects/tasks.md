@@ -17,8 +17,9 @@ peripheral (same shape as `PwmSteeringServo`/`GpioMotorDriver`/`GpioLightsOutput
 validated on-device via `quickstart.md` instead of a host unit test — established precedent, not a
 gap (see plan.md's Constitution Check).
 
-**Scope reminder** (from plan.md, as revised by T020 below — task bodies below this line are left
-unedited as historical record and predate that revision): this feature supersedes an earlier
+**Scope reminder** (from plan.md, as revised by T020 and T021 below — task bodies below this line
+are left unedited as historical record and predate those revisions; **T021 supersedes T020: the
+engine tone and `motorEngaged()` no longer exist, and the horn is the only effect**): this feature supersedes an earlier
 "A2DP Audio Streaming" draft for the same slot (see spec.md Clarifications). It adds one one-shot
 trigger word (`HORN`) to the existing drive/light-command vocabulary, a new `ToneControl` (Control
 layer), a `motorEngaged(Direction)` helper (Control layer), and a new
@@ -246,6 +247,23 @@ never compromise driving responsiveness or safety.
       `plan.md`, `research.md`, `data-model.md`, both `contracts/` files, `quickstart.md`, and
       `README.md` — confirmed: `pio test -e native` 112/112 passing; `pio run -e esp32dev` links
       cleanly with zero compiler errors (see Post-completion change note below)
+- [X] T021 [P] Remove the engine tone entirely (after on-device testing); only the horn stays.
+      Drop `IToneOutput::setEngineRunning()` (`src/hardware/i_tone_output.h`); rewrite
+      `PwmToneOutput` (`src/hardware/pwm_tone_output.h`) to be silent at boot, write
+      `config::kHornFreqHz` on `playHorn()`, and write 0 from `tick()` once
+      `config::kHornDurationMs` elapses; drop `motorEngaged()` (`src/control/direction.h`) and its
+      unit tests (`test_direction_control.cpp`); drop the `setEngineRunning()` calls from
+      `src/main.cpp` (both the normal command path and the safe-state transition); drop
+      `kEngineIdle*`/`kEngineRunning*`/`kToneLayer*` from `src/config.h`; delete
+      `test_drive_to_engine_tone_flow.cpp` and the engine members of `FakeToneOutput`; update
+      `test_main.cpp` and `README.md`; keep `test_tone_rejects_removed_engine_word_as_malformed`.
+      Update `spec.md` (engine user story, FR-007–FR-010 and SC-005 removed; FRs renumbered so
+      drive-non-interference is FR-007, horn-not-interrupted FR-008, safety FR-009, volume
+      FR-010), `plan.md`, `research.md` (§4, §6, §7, §9), `data-model.md`, both `contracts/`
+      files, `quickstart.md`, and `checklists/requirements.md` — confirmed: `pio test -e native`
+      104/104 passing; `pio run -e esp32dev` compiles and links with zero compiler errors (the
+      same pre-existing post-link SCons/`firmware.elf` toolchain failure noted in T017 still
+      occurs, including on the unmodified code); horn-only behavior confirmed working on-device
 
 ---
 
@@ -316,7 +334,7 @@ Task: "Unit tests for ToneControl in test/test_native/test_tone_control.cpp"
    (T014–T015)
 4. Polish → README pinout update + firmware build check + full on-device pass (T016–T018)
 5. Post-completion → siren effect removed (T019); engine tone made automatic, horn layered on top
-   of it instead of mutually exclusive (T020)
+   of it instead of mutually exclusive (T020); engine tone removed, horn only (T021)
 
 ---
 
@@ -376,3 +394,16 @@ commands" non-blocking `tick()` design (FR-011/FR-012, research.md §7), the DC-
 fail-safe scope exclusion (FR-013), and the single-GPIO-26 hardware choice (no new pin was added —
 research.md §10 explicitly considered and rejected a second output pin for true simultaneous
 mixing, in favor of time-slicing the existing one).
+
+### Post-completion change: engine tone removed, horn only
+
+After T020 was implemented and tried on the device, the engine tone was removed per explicit
+instruction ("only the horn sound should stay"), superseding the T020 design (left unedited above
+for history). The output is now silent except for the 1500ms/420Hz horn; `setEngineRunning()`,
+`motorEngaged()`, the engine/layering constants, and `test_drive_to_engine_tone_flow.cpp` are
+gone. `ENGINE` remains an unrecognized (`Malformed`) word, like `SIREN`. The spec's user stories,
+FR numbering, and success criteria were revised accordingly (see T021).
+
+Unaffected: the horn's 1500ms fixed duration and 420Hz tone (FR-004), the busy/ignore behavior
+(FR-005), the non-blocking design (FR-007/FR-008), the fail-safe scope exclusion (FR-009), and
+the single-GPIO-26 hardware choice.

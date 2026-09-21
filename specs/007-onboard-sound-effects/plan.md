@@ -14,23 +14,17 @@ as part of this plan's implementation.
 
 Adds one one-shot trigger command (`HORN`) to the existing Bluetooth wire protocol, following the
 same "Protocol parses → Control decides → Hardware acts" shape `006`'s light commands already
-established, plus a fully automatic engine tone that requires no command at all. A new
-`parseHornCommand()` (Protocol) parses `HORN`; a new `ToneControl` (Control) decides whether to
-honor a horn trigger based on whether the horn output reports itself busy (ignoring the request
-otherwise — spec FR-005); a new `IToneOutput`/`PwmToneOutput` (Hardware) drives a single GPIO
-(`config::kToneOutputPin` = 26) via the ESP32's LEDC tone-generation peripheral. The engine tone
-plays continuously and automatically — `main.cpp` derives whether the DC motor is engaged from the
-already-decided `Direction` (via a new `motorEngaged()` helper) and calls
-`IToneOutput::setEngineRunning()` every time a drive command is handled, switching the LEDC output
-between a low ~52Hz idle rumble and a higher ~147Hz "running" rumble (both wobbled to approximate
-a V8). The horn, when triggered, plays on top of whichever engine tone is active by rapidly
-time-slicing the single LEDC channel between the horn and engine frequencies (spec FR-010), rather
-than silencing the engine — this and the automatic-engine design are updated non-blockingly from
-`tick()` so drive commands are never delayed and the horn is never cut short (FR-011/FR-012). No
-Bluetooth audio profile, pairing, or third-party library is used — the audio is entirely local to
-the ESP32, one GPIO, one speaker/buzzer. (A third effect, siren, was implemented then removed —
-the car is not an ambulance. `ENGINE` was also removed as a manual trigger word once the engine
-sound became automatic.)
+established. A new `parseHornCommand()` (Protocol) parses `HORN`; a new `ToneControl` (Control)
+decides whether to honor a horn trigger based on whether the horn output reports itself busy
+(ignoring the request otherwise — spec FR-005); a new `IToneOutput`/`PwmToneOutput` (Hardware)
+drives a single GPIO (`config::kToneOutputPin` = 26) via the ESP32's LEDC tone-generation
+peripheral: a constant 420Hz tone for 1500ms after `playHorn()`, silent otherwise. Playback is
+updated non-blockingly from `tick()` so drive commands are never delayed and the horn is never cut
+short (FR-007/FR-008). No Bluetooth audio profile, pairing, or third-party library is used — the
+audio is entirely local to the ESP32, one GPIO, one speaker/buzzer. (Two further effects were
+implemented then removed: siren — the car is not an ambulance — and an automatic idle/running
+engine tone with horn-over-engine layering, dropped after on-device testing. `SIREN` and `ENGINE`
+are no longer recognized words.)
 
 ## Technical Context
 
@@ -47,11 +41,9 @@ draft's `pschatzmann/ESP32-A2DP` dependency, which is being removed.)
 same as every other feature's boot defaults.
 
 **Testing**: Unity via `pio test -e native`. New host-testable logic: `parseHornCommand()`
-(Protocol), `ToneControl` (Control), `motorEngaged()` (Control) — all pure, no Arduino dependency
-— plus two integration tests: `test_tone_command_to_output_flow.cpp` (received `HORN` line →
-honored-or-ignored → `playHorn()`, against `FakeTransport`/`FakeToneOutput`) and
-`test_drive_to_engine_tone_flow.cpp` (received drive command → `Direction` → `motorEngaged()` →
-`setEngineRunning()`, against the same fakes plus `DriveCommandAssembler`/`DirectionControl`).
+(Protocol) and `ToneControl` (Control) — both pure, no Arduino dependency — plus one integration
+test: `test_tone_command_to_output_flow.cpp` (received `HORN` line → honored-or-ignored →
+`playHorn()`, against `FakeTransport`/`FakeToneOutput`).
 `PwmToneOutput` itself is a thin ESP32-only wrapper around the LEDC peripheral (like
 `PwmSteeringServo`/`GpioMotorDriver`/`GpioLightsOutput`) and is validated on-device via
 `quickstart.md`, not a host unit test — same established precedent.
@@ -64,17 +56,15 @@ environment for tests (Constitution Principle II).
 **Performance Goals**: Per spec SC-001 (no perceptible delay triggering a tone), SC-002 (no added
 delay/missed drive commands while a tone plays).
 
-**Constraints**: FR-011/FR-012's "never delay drive commands, never cut off a playing horn" is
-satisfied by keeping `PwmToneOutput`'s `tick()` O(1) per call — updating the LEDC frequency, never
-busy-waiting (research.md §7) — not by running on a separate task (there is no separate task;
-everything is on the single Arduino main loop, unlike the superseded A2DP design). No app-side
-volume control (spec FR-014 — hardware trimpot only). Only the horn has a busy flag; the engine
-never stops (spec Assumptions, research.md §4). Horn duration is fixed at 1500ms
-(`config::kHornDurationMs`) per explicit instruction. The horn layers on top of the engine via
-single-channel time-slicing, not true simultaneous mixing (spec Assumptions, research.md §10).
+**Constraints**: FR-007/FR-008's "never delay drive commands, never cut off a playing horn" is
+satisfied by keeping `PwmToneOutput`'s `playHorn()`/`tick()` O(1) per call — at most one LEDC
+tone write, never busy-waiting (research.md §7) — not by running on a separate task (there is no
+separate task; everything is on the single Arduino main loop, unlike the superseded A2DP design).
+No app-side volume control (spec FR-010 — hardware trimpot only). Horn duration is fixed at 1500ms
+(`config::kHornDurationMs`) per explicit instruction.
 
-**Scale/Scope**: Single ESP32, one manually-triggered sound effect (horn) plus one fully automatic
-one (engine, idle/running), one existing Bluetooth connection (no new connection type).
+**Scale/Scope**: Single ESP32, one manually-triggered sound effect (horn), one existing Bluetooth
+connection (no new connection type).
 
 ## Constitution Check
 
@@ -82,17 +72,17 @@ one (engine, idle/running), one existing Bluetooth connection (no new connection
 
 | Principle | Check | Result |
 |-----------|-------|--------|
-| I. Simplicity First (YAGNI) | No new dependency (research.md §8 — the earlier A2DP library is removed). Small pieces, each mirroring an existing pattern: `parseHornCommand`/`ToneControl`/`IToneOutput`+`PwmToneOutput` mirror `parseLightCommand`/`LightsControl`/`ILightsOutput`+`GpioLightsOutput`; `motorEngaged()` is a one-line pure mapping added to the existing `control/direction.h`, not a new class (research.md §9). The engine's automatic idle/running behavior reuses the already-decided `Direction` rather than introducing a second "is the car driving" concept. Horn-over-engine layering reuses the single existing LEDC channel via time-slicing rather than adding a second GPIO/speaker (research.md §10 — the added-hardware alternative was explicitly considered and rejected). No new abstraction beyond what FR-001–FR-014 require. | PASS |
-| II. Test-First | `parseHornCommand()`, `ToneControl`, and `motorEngaged()` are pure logic and get full unit tests before being wired into `main.cpp`; both the horn trigger path and the drive-command-to-engine-state path get integration tests against fakes (`FakeTransport`, `FakeToneOutput`, `DriveCommandAssembler`, `DirectionControl`). `PwmToneOutput` is validated on-device per existing precedent (`001`/`002`/`004`/`006`), not a gap — see Testing above. | PASS |
-| III. Simple, Layered Architecture | `Protocol` (`parseHornCommand`) → `Control` (`ToneControl` decides; `motorEngaged()` maps `Direction`) → `Hardware` (`PwmToneOutput` acts), one-way, exactly like the existing `LightCommand`/`LightsControl`/`GpioLightsOutput` flow. `main.cpp` remains the only place concrete implementations are wired together and the only place a decided value (horn honored, or the current `Direction`) is handed from `Control` to `Hardware`. No layer gains a new *upward* dependency. | PASS |
+| I. Simplicity First (YAGNI) | No new dependency (research.md §8 — the earlier A2DP library is removed). Small pieces, each mirroring an existing pattern: `parseHornCommand`/`ToneControl`/`IToneOutput`+`PwmToneOutput` mirror `parseLightCommand`/`LightsControl`/`ILightsOutput`+`GpioLightsOutput`. The engine tone and horn-over-engine layering were removed as unneeded (research.md §9). No new abstraction beyond what FR-001–FR-010 require. | PASS |
+| II. Test-First | `parseHornCommand()` and `ToneControl` are pure logic and get full unit tests before being wired into `main.cpp`; the horn trigger path gets an integration test against fakes (`FakeTransport`, `FakeToneOutput`). `PwmToneOutput` is validated on-device per existing precedent (`001`/`002`/`004`/`006`), not a gap — see Testing above. | PASS |
+| III. Simple, Layered Architecture | `Protocol` (`parseHornCommand`) → `Control` (`ToneControl` decides) → `Hardware` (`PwmToneOutput` acts), one-way, exactly like the existing `LightCommand`/`LightsControl`/`GpioLightsOutput` flow. `main.cpp` remains the only place concrete implementations are wired together and the only place a decided value (horn honored) is handed from `Control` to `Hardware`. No layer gains a new *upward* dependency. | PASS |
 | IV. Hardware Abstraction for Testability | `PwmToneOutput` sits behind a new `IToneOutput` interface with `FakeToneOutput` as its test double — same pattern as `IMotorDriver`/`FakeMotorDriver`, `ILightsOutput`/`RecordingLightsOutput`. No hardware access happens outside this interface or the existing ones. | PASS |
-| V. Safe Motor Control | Not applicable — this feature adds no motor/servo control and does not read or modify anything `DirectionControl`/`MotorServoVehicleOutput` depend on; it only *reads* the already-decided `Direction` via `motorEngaged()`. Sound effects are explicitly excluded from the fail-safe scope, mirroring `006`'s lights precedent (spec FR-013, Assumptions): a disconnect/timeout continues to stop the DC motor and center the servo exactly as before. The engine tone does switch to idle on that same transition, but only as a side effect of reading `Direction::Stop`, not new fail-safe logic. | PASS (N/A to motor control; scope deliberately excluded per spec) |
+| V. Safe Motor Control | Not applicable — this feature adds no motor/servo control and does not read or modify anything `DirectionControl`/`MotorServoVehicleOutput` depend on. The horn is explicitly excluded from the fail-safe scope, mirroring `006`'s lights precedent (spec FR-009, Assumptions): a disconnect/timeout continues to stop the DC motor and center the servo exactly as before. | PASS (N/A to motor control; scope deliberately excluded per spec) |
 
 No unjustified violations. Complexity Tracking table is not needed.
 
 *Re-checked after Phase 1 design (data-model.md, contracts/, quickstart.md): the design introduces
-exactly the pieces anticipated above — one Protocol addition, one Control class plus one Control
-helper function, one Hardware interface + impl, and nothing else (no dependency, no new connection
+exactly the pieces anticipated above — one Protocol addition, one Control class, one Hardware
+interface + impl, and nothing else (no dependency, no new connection
 type). All five principles still PASS with no new violations.*
 
 ## Project Structure
@@ -113,26 +103,21 @@ specs/007-onboard-sound-effects/
 
 ```text
 src/
-├── config.h                          # kToneOutputPin (GPIO26), horn/idle/running frequency and
-│                                      #   layering constants (re-purposed from the superseded
+├── config.h                          # kToneOutputPin (GPIO26), kToneLedcChannel, horn duration/
+│                                      #   frequency constants (re-purposed from the superseded
 │                                      #   A2DP draft)
 ├── control/
-│   ├── direction.h                   # + motorEngaged(Direction) helper (NEW addition to an
-│   │                                  #   existing file, not a new file)
 │   └── tone_control.h/.cpp           # NEW: ToneControl::apply(hornBusy)
 ├── protocol/
 │   └── tone_command_parser.h/.cpp    # NEW: parseHornCommand()
 ├── hardware/
-│   ├── i_tone_output.h               # NEW: IToneOutput::playHorn()/hornBusy()/
-│   │                                  #   setEngineRunning()/tick()
+│   ├── i_tone_output.h               # NEW: IToneOutput::playHorn()/hornBusy()/tick()
 │   └── pwm_tone_output.h             # NEW: ESP32-only real impl — LEDC tone generation
 └── main.cpp                          # + ToneControl/PwmToneOutput instances; loop() tries
                                        #   parseHornCommand() alongside the existing
                                        #   parseLightCommand() check; on Ok, calls
                                        #   toneControl.apply(toneOutput.hornBusy()) and
-                                       #   toneOutput.playHorn() if honored; every decided drive
-                                       #   Direction (including the safe-state STOP) also calls
-                                       #   toneOutput.setEngineRunning(motorEngaged(direction));
+                                       #   toneOutput.playHorn() if honored;
                                        #   toneOutput.tick() called every loop() iteration
 
 test/test_native/
@@ -140,15 +125,12 @@ test/test_native/
 │   └── fake_tone_output.h                  # NEW: IToneOutput test double
 ├── test_tone_command_parser.cpp            # NEW
 ├── test_tone_control.cpp                   # NEW
-├── test_tone_command_to_output_flow.cpp    # NEW: integration, FakeTransport + FakeToneOutput
-│                                            #   (horn trigger path)
-├── test_drive_to_engine_tone_flow.cpp      # NEW: integration, DriveCommandAssembler +
-│                                            #   DirectionControl + FakeToneOutput (automatic
-│                                            #   engine-state path)
-└── test_direction_control.cpp              # + motorEngaged() unit tests (existing file)
+└── test_tone_command_to_output_flow.cpp    # NEW: integration, FakeTransport + FakeToneOutput
+                                             #   (horn trigger path)
 ```
 
-Removed (belonged only to the superseded A2DP design, never reached `main.cpp`):
+Removed: the engine tone (`setEngineRunning()`, `motorEngaged()`, the idle/running/layering
+constants, `test_drive_to_engine_tone_flow.cpp`). Also removed (belonged only to the superseded A2DP design, never reached `main.cpp`):
 `src/hardware/i_audio_connection.h`, `test/test_native/fakes/fake_audio_connection.h`,
 `test/test_native/test_audio_connection_logging_flow.cpp`, the `pschatzmann/ESP32-A2DP`
 `lib_deps` entry, and their `test_main.cpp` registrations.

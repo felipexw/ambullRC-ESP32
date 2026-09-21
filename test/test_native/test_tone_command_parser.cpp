@@ -2,9 +2,8 @@
 
 #include "protocol/tone_command_parser.h"
 
-// HORN is the only remaining manual sound-effect trigger word, parsed
-// case-insensitively, with no ON/OFF pair or numeric argument. The engine
-// tone is no longer a manual trigger (it's fully automatic).
+// HORN is the only sound-effect trigger word, parsed case-insensitively,
+// with no ON/OFF pair or numeric argument.
 
 void test_tone_parses_horn(void) {
   TEST_ASSERT_EQUAL(static_cast<int>(ParseResult::Ok), static_cast<int>(parseHornCommand("HORN")));
@@ -44,10 +43,8 @@ void test_tone_rejects_garbage_as_malformed(void) {
   TEST_ASSERT_EQUAL(static_cast<int>(ParseResult::Malformed), static_cast<int>(parseHornCommand("")));
 }
 
-// SIREN was removed first (no longer an ambulance); ENGINE has since also
-// been removed as a manual trigger (the engine tone is fully automatic,
-// driven by drive state instead) — both must be rejected, not silently
-// accepted as stale recognized words.
+// SIREN and ENGINE sound effects have been removed — both must be rejected,
+// not silently accepted as stale recognized words.
 
 void test_tone_rejects_removed_siren_word_as_malformed(void) {
   TEST_ASSERT_EQUAL(static_cast<int>(ParseResult::Malformed),

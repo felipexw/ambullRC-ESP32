@@ -104,7 +104,7 @@ test/                              # Tests (native/host-runnable)
 - Green LED (2) to signal that the ESP32 is sucessfully connected to the RC app 
 - Micro servo motor SG 90
 - DC motor
-- Speaker/buzzer (onboard sound effects: triggered horn + automatic engine idle/running tone)
+- Speaker/buzzer (onboard sound effects: triggered horn)
   with a volume trim potentiometer
 
 [Schematics](https://github.com/felipexw/ambullRC-ESP32/blob/main/schematic_final_en.svg)
@@ -123,7 +123,7 @@ All pins are defined in [`src/config.h`](src/config.h).
 | 22   | Auxiliary light 2                  | `kLight2Pin`; digital on/off                                   |
 | 23   | Auxiliary light 3                  | `kLight3Pin`; digital on/off                                   |
 | 25   | Auxiliary light 4                  | `kLight4Pin`; digital on/off                                   |
-| 26   | Speaker/buzzer — sound effects      | `kToneOutputPin`; LEDC tone signal (triggered horn layered over an always-on, automatic engine idle/running tone) |
+| 26   | Speaker/buzzer — sound effects      | `kToneOutputPin`; LEDC tone signal (triggered horn) |
 
 The red power-on LED is wired directly across VCC (through its current-limiting resistor) and
 isn't driven by a GPIO.
