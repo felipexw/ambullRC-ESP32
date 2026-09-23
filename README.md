@@ -123,7 +123,7 @@ All pins are defined in [`src/config.h`](src/config.h).
 | 22   | Auxiliary light 2                  | `kLight2Pin`; digital on/off                                   |
 | 23   | Auxiliary light 3                  | `kLight3Pin`; digital on/off                                   |
 | 25   | Auxiliary light 4                  | `kLight4Pin`; digital on/off                                   |
-| 26   | Speaker/buzzer — sound effects      | `kToneOutputPin`; LEDC tone signal (triggered horn) |
+| 26   | Speaker/buzzer — sound effects      | `kToneOutputPin`; DAC tone signal (triggered horn) |
 
 The red power-on LED is wired directly across VCC (through its current-limiting resistor) and
 isn't driven by a GPIO.

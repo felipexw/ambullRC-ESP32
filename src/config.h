@@ -21,21 +21,26 @@ constexpr int kThrottleMax = 100;
 // position, used both at boot and as the fail-safe/straight-driving state.
 constexpr int kServoPin = 13;
 // Lock-to-lock range for this test rig, also the hard clamp applied in
-// PwmSteeringServo::setAngleDeg().
-constexpr int kServoMinAngleDeg = 0;
-constexpr int kServoMaxAngleDeg = 180;
-constexpr int kServoNeutralAngleDeg = 90;
+// PwmSteeringServo::setAngleDeg(). Recalibrated on-device: the servo horn's
+// mounting offset against the steering linkage means the wheel-straight
+// point isn't the middle of this range (60 sits closer to the left lock at
+// 30 than to the right lock at 160) — confirmed by driving the car, not a
+// typo.
+constexpr int kServoMinAngleDeg = 30;
+constexpr int kServoMaxAngleDeg = 160;
+constexpr int kServoNeutralAngleDeg = 60;
 constexpr int kServoMinPulseUs = 500;
 constexpr int kServoMaxPulseUs = 2400;
 constexpr int kServoLeftAngleDeg = kServoMinAngleDeg;
 constexpr int kServoRightAngleDeg = kServoMaxAngleDeg;
-// The angle->pulse linear map (500-2400us across 0-180°) doesn't land
-// exactly on the standard 1500us center pulse at kServoNeutralAngleDeg (90
-// maps to ~1450us), nudging the wheels slightly off true center. So the
-// neutral/straight state is driven by this explicit calibrated pulse
-// instead (see PwmSteeringServo), guaranteeing a precisely centered angle.
-// If the wheels still sit slightly off-center at neutral, nudge this in
-// ~10-20us steps.
+// The angle->pulse linear map (500-2400us across 0-180°, the Servo library's
+// own write() convention — independent of this rig's kServoMinAngleDeg/
+// kServoMaxAngleDeg lock-to-lock limits above) doesn't land exactly on the
+// standard 1500us center pulse at kServoNeutralAngleDeg (60 maps to
+// ~1133us). So the neutral/straight state is driven by this explicit
+// calibrated pulse instead (see PwmSteeringServo), guaranteeing a precisely
+// centered angle. If the wheels still sit slightly off-center at neutral,
+// nudge this in ~10-20us steps.
 constexpr int kServoStopPulseUs = 1500;
 // LEFT/RIGHT taps swing the servo to its full lock and hold it there only
 // for this long before MotorServoVehicleOutput automatically re-centers it,
@@ -67,23 +72,16 @@ constexpr int kLight2Pin = 22;
 constexpr int kLight3Pin = 23;
 constexpr int kLight4Pin = 25;
 
-// Onboard sound effects (Hardware layer: PwmToneOutput). A single GPIO
-// driving a speaker/buzzer via the ESP32's LEDC tone-generation peripheral
-// (the same PWM hardware family PwmSteeringServo uses) — not the built-in
-// analog DAC (fixed to GPIO25/26, which would collide with kLight4Pin) and
-// not an external I2S DAC/amp. Volume is fixed by a hardware trim
+// Onboard sound effects (Hardware layer: DacToneOutput). A single GPIO
+// driving a speaker/amp module directly via the ESP32's built-in 8-bit DAC
+// (DAC channel 2). Only DAC channel 2 is enabled: GPIO25 (DAC channel 1) is
+// kLight4Pin and must not be claimed. Volume is fixed by a hardware trim
 // potentiometer downstream of this pin — there is no software volume
 // control.
 constexpr int kToneOutputPin = 26;
-// The installed Arduino-ESP32 core (2.x-generation LEDC API, per
-// framework-arduinoespressif32 @ 3.20017.241212) addresses LEDC by channel
-// number, not pin, separately from ledcAttachPin(). Channel 15 (the last of
-// 16) is used to stay clear of whatever low channel ESP32Servo auto-allocates
-// for the steering servo.
-constexpr int kToneLedcChannel = 15;
 
-// Horn: fixed duration and tone per explicit spec (FR-002/FR-003a). A
-// one-shot trigger; the output is silent otherwise.
+// Horn: a synthesized square-wave tone written directly to the DAC
+// (DacToneOutput::playHorn() blocks for the full duration).
 constexpr unsigned long kHornDurationMs = 1500;
 constexpr int kHornFreqHz = 420;
 

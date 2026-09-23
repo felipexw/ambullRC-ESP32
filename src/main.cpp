@@ -10,7 +10,7 @@
 #include "hardware/led_connection_output.h"
 #include "hardware/motor_servo_vehicle_output.h"
 #include "hardware/pwm_steering_servo.h"
-#include "hardware/pwm_tone_output.h"
+#include "hardware/dac_tone_output.h"
 #include "hardware/serial_connection_output.h"
 #include "hardware/serial_direction_output.h"
 #include "protocol/command_parser.h"
@@ -41,7 +41,7 @@ LightsControl lightsControl;
 GpioLightsOutput lightsOutput;
 
 ToneControl toneControl;
-PwmToneOutput toneOutput;
+DacToneOutput toneOutput;
 
 // Emits the decided direction to both the serial log and the real hardware,
 // so neither can drift out of sync at a call site.

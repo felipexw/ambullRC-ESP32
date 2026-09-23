@@ -139,6 +139,8 @@ extern void test_tone_flow_valid_trigger_plays_when_not_busy(void);
 extern void test_tone_flow_non_tone_line_does_not_trigger_playback(void);
 extern void test_tone_flow_retrigger_while_busy_is_ignored(void);
 extern void test_tone_flow_plays_again_once_no_longer_busy(void);
+extern void test_tone_flow_drive_commands_unaffected_while_horn_busy(void);
+extern void test_tone_flow_disconnect_while_horn_busy_still_stops_motor(void);
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -265,6 +267,8 @@ int main(int argc, char **argv) {
   RUN_TEST(test_tone_flow_non_tone_line_does_not_trigger_playback);
   RUN_TEST(test_tone_flow_retrigger_while_busy_is_ignored);
   RUN_TEST(test_tone_flow_plays_again_once_no_longer_busy);
+  RUN_TEST(test_tone_flow_drive_commands_unaffected_while_horn_busy);
+  RUN_TEST(test_tone_flow_disconnect_while_horn_busy_still_stops_motor);
 
   return UNITY_END();
 }
