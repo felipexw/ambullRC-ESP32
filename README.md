@@ -103,7 +103,7 @@ test/                              # Tests (native/host-runnable)
 | Switch out | LM2596 #1 IN+ and LM2596 #2 IN+ | Both regulators fed in parallel from the battery |
 | Battery (−) | Common GND | Direct, no switch |
 | LM2596 #1 OUT+ | **VCC-A bus (6V)** | Powers L9110S #1 + traction motor |
-| LM2596 #2 OUT+ | **VCC-B bus (5V)** | Powers ESP32, LM386, power LED |
+| LM2596 #2 OUT+ | **VCC-B bus (5V)** | Powers ESP32, steering servo, LM386, power LED |
 
 ## Drivetrain — traction
 
@@ -119,7 +119,7 @@ test/                              # Tests (native/host-runnable)
 
 | From | To | Notes |
 |---|---|---|
-| VCC-A | Micro Servo 90g | Powers the servo motor |
+| VCC-B | Micro Servo 90g | Powers the servo motor (5V, shared with the ESP32) |
 | GND | Micro Servo 90g | Common ground |
 | GPIO13 | Micro Servo 90g | PWM steering signal (`kServoPin`) — a positional 180° servo driven directly, no motor driver IC involved |
 
@@ -133,17 +133,41 @@ test/                              # Tests (native/host-runnable)
 
 ## Lighting
 
+There are **six LEDs** in total, in three groups. Each one needs its own 220–330Ω resistor
+in series. The long leg is the anode (+), and the short leg (flat side) is the cathode (−),
+which goes to GND.
+
+### 1. Bluetooth connection LED (1 LED, green)
+
+Lights up only while the RC app is connected over Bluetooth, and goes off on disconnect.
+The light command doesn't affect it.
+
 | GPIO | Component | Wiring | Notes |
 |---|---|---|---|
-| GPIO12 | BLE connection status LED (green) | GPIO12 → 220–330Ω → LED anode → cathode → GND | `kLedPin`; on when connected to the RC app |
-| GPIO21 | Auxiliary light 1 | GPIO21 → 220–330Ω → LED anode → cathode → GND | `kLight1Pin`; digital on/off |
-| GPIO22 | Auxiliary light 2 | GPIO22 → 220–330Ω → LED anode → cathode → GND | `kLight2Pin`; digital on/off |
-| GPIO23 | Auxiliary light 3 | GPIO23 → 220–330Ω → LED anode → cathode → GND | `kLight3Pin`; digital on/off |
-| GPIO25 | Auxiliary light 4 | GPIO25 → 220–330Ω → LED anode → cathode → GND | `kLight4Pin`; digital on/off. Also the ESP32's DAC channel 1 — kept free of DAC use since the horn uses DAC channel 2 (GPIO26) |
-| — (passive) | Power indicator LED (red) | VCC-B → 220–330Ω → LED anode → cathode → GND | Always on when switch is on, no GPIO involved |
+| GPIO12 | BLE connection status LED (green) | GPIO12 → 220–330Ω → LED anode → cathode → GND | `kLedPin` |
 
-All four auxiliary lights are simple independent ON/OFF toggles — there's no taillight,
-headlight, turn-signal, or ambient-light logic in the firmware today.
+### 2. Auxiliary lights (4 LEDs, switched by the light command)
+
+All four switch **together**: `LIGHTS_ON` over Bluetooth turns all four on, and `LIGHTS_OFF`
+turns all four off. The app has a single toggle, and the lights can't be switched one at a
+time. A Bluetooth disconnect **doesn't** change them: they stay as they were until the next
+light command. They start OFF at power-up.
+
+| GPIO | Component | Wiring | Notes |
+|---|---|---|---|
+| GPIO21 | Auxiliary light 1 | GPIO21 → 220–330Ω → LED anode → cathode → GND | `kLight1Pin` |
+| GPIO22 | Auxiliary light 2 | GPIO22 → 220–330Ω → LED anode → cathode → GND | `kLight2Pin` |
+| GPIO23 | Auxiliary light 3 | GPIO23 → 220–330Ω → LED anode → cathode → GND | `kLight3Pin` |
+| GPIO25 | Auxiliary light 4 | GPIO25 → 220–330Ω → LED anode → cathode → GND | `kLight4Pin`. Also the ESP32's DAC channel 1, kept free of DAC use because the horn uses DAC channel 2 (GPIO26) |
+
+The four positions are interchangeable. The firmware has no headlight, taillight, or
+turn-signal roles, so you can mount them wherever you like on the car.
+
+### 3. Power indicator LED (1 LED, red, no GPIO)
+
+| From | Component | Wiring | Notes |
+|---|---|---|---|
+| VCC-B (5V) | Power indicator LED (red) | VCC-B → 220–330Ω → LED anode → cathode → GND | Always on while the power switch is on. The firmware doesn't control it |
 
 ## Audio (LM386 + speaker)
 
@@ -168,11 +192,11 @@ All pins are defined in [`src/config.h`](src/config.h).
 
 | GPIO | Function | Notes |
 |---|---|---|
-| 12 | BLE connection status LED (green) | `kLedPin` |
+| 12 | BLE connection status LED (green) | `kLedPin`; on while the app is connected |
 | 13 | Steering servo (SG90) | `kServoPin`; PWM control signal |
 | 18 | Traction L9110S — motor input A | `kMotorPinA` |
 | 19 | Traction L9110S — motor input B | `kMotorPinB` |
-| 21 | Auxiliary light 1 | `kLight1Pin` |
+| 21 | Auxiliary light 1 (all four switch together on `LIGHTS_ON`/`LIGHTS_OFF`) | `kLight1Pin` |
 | 22 | Auxiliary light 2 | `kLight2Pin` |
 | 23 | Auxiliary light 3 | `kLight3Pin` |
 | 25 | Auxiliary light 4 | `kLight4Pin`; also DAC channel 1 — kept free of DAC use |
