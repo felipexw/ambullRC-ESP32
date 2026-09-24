@@ -13,9 +13,10 @@ is needed (YAGNI), keep the architecture small, and cover every feature with aut
 
 ## Status
 
-Toolchain is set up (PlatformIO, `esp32dev` board). `src/main.cpp` is currently a smoke-test
-sketch confirming the build/flash pipeline; the real Transport/Protocol/Control/Hardware layers
-described below are not yet implemented.
+Toolchain is set up (PlatformIO, `esp32dev` board). The Transport/Protocol/Control/Hardware
+layers described below are implemented: `src/main.cpp` wires up the Bluetooth (BLE GATT)
+transport, command parsing, steering-servo and DC-motor control, auxiliary lights, and an
+onboard horn tone, with fail-safe behavior on disconnect/timeout.
 
 ## How it works
 
@@ -94,38 +95,90 @@ src/                               # Firmware source
 test/                              # Tests (native/host-runnable)
 ```
 
-## Electronic components
-- 2 LM2596
-- C1 (1000µF) voltage rating vs VCC-A (~6V)
-- C2 (100µF) voltage rating vs VCC-B (~5V)
-- L9110S 
-- Red LED (1) to signal that the system is powered on;
-- Resistor (220-330Ω) for LED1;
-- Green LED (2) to signal that the ESP32 is sucessfully connected to the RC app 
-- Micro servo motor SG 90
-- DC motor
-- Speaker/buzzer (onboard sound effects: triggered horn)
-  with a volume trim potentiometer
+## Power distribution
 
-[Schematics](https://github.com/felipexw/ambullRC-ESP32/blob/main/schematic_final_en.svg)
+| From | To | Notes |
+|---|---|---|
+| Battery (+) | ON/OFF switch | External switch, non-polarized (2-terminal) |
+| Switch out | LM2596 #1 IN+ and LM2596 #2 IN+ | Both regulators fed in parallel from the battery |
+| Battery (−) | Common GND | Direct, no switch |
+| LM2596 #1 OUT+ | **VCC-A bus (6V)** | Powers L9110S #1 + traction motor |
+| LM2596 #2 OUT+ | **VCC-B bus (5V)** | Powers ESP32, LM386, power LED |
 
-## Pinout
+## Drivetrain — traction
+
+| From | To | Notes |
+|---|---|---|
+| VCC-A | L9110S #1 VCC | Power |
+| GPIO18 | L9110S #1 B-IA | Direction/PWM |
+| GPIO19 | L9110S #1 B-IB | Direction/PWM |
+| L9110S #1 MOTOR B+/B− | Traction motor terminals | No polarity — swap to reverse direction mapping |
+| C1 (1000µF, 16–25V) | L9110S #1 VCC/GND | Local smoothing capacitor, placed close to the module |
+
+## Drivetrain — steering
+
+| From | To | Notes |
+|---|---|---|
+| VCC-A | Micro Servo 90g | Powers the servo motor |
+| GND | Micro Servo 90g | Common ground |
+| GPIO13 | Micro Servo 90g | PWM steering signal (`kServoPin`) — a positional 180° servo driven directly, no motor driver IC involved |
+
+## Control (ESP32)
+
+| From | To | Notes |
+|---|---|---|
+| VCC-B | ESP32 VIN | 5V |
+| Common GND | ESP32 GND | |
+| C2 (100–220µF) | VCC-B / GND | Near ESP32/servo area |
+
+## Lighting
+
+| GPIO | Component | Wiring | Notes |
+|---|---|---|---|
+| GPIO12 | BLE connection status LED (green) | GPIO12 → 220–330Ω → LED anode → cathode → GND | `kLedPin`; on when connected to the RC app |
+| GPIO21 | Auxiliary light 1 | GPIO21 → 220–330Ω → LED anode → cathode → GND | `kLight1Pin`; digital on/off |
+| GPIO22 | Auxiliary light 2 | GPIO22 → 220–330Ω → LED anode → cathode → GND | `kLight2Pin`; digital on/off |
+| GPIO23 | Auxiliary light 3 | GPIO23 → 220–330Ω → LED anode → cathode → GND | `kLight3Pin`; digital on/off |
+| GPIO25 | Auxiliary light 4 | GPIO25 → 220–330Ω → LED anode → cathode → GND | `kLight4Pin`; digital on/off. Also the ESP32's DAC channel 1 — kept free of DAC use since the horn uses DAC channel 2 (GPIO26) |
+| — (passive) | Power indicator LED (red) | VCC-B → 220–330Ω → LED anode → cathode → GND | Always on when switch is on, no GPIO involved |
+
+All four auxiliary lights are simple independent ON/OFF toggles — there's no taillight,
+headlight, turn-signal, or ambient-light logic in the firmware today.
+
+## Audio (LM386 + speaker)
+
+| From | To | Notes |
+|---|---|---|
+| VCC-B | LM386 VCC | 5V |
+| Common GND | LM386 GND (either of the 2 GND pins) | Both pins are the same net |
+| GPIO26 (DAC) | Coupling capacitor (10uF) | AC-couples the DAC output into the LM386 input pin, blocking DC bias |
+| 100µF stability cap | LM386 VCC / GND | Local, close to the module — separate from the module's built-in output coupling cap |
+| LM386 OUT terminal | Speaker wire 1 | |
+| LM386 GND terminal | Speaker wire 2 | Speaker has no polarity |
+
+## Bluetooth
+
+- **BLE GATT server** — existing control channel (motor, steering, LEDs)
+- **A2DP sink (planned)** — receives Spotify audio via standard OS-level Bluetooth routing on the phone. Requires the original ESP32 (Classic BT support) — confirmed on this build
+- **Known tradeoff:** BLE and A2DP share the same radio; expect occasional audio stutter during control bursts, and control latency spikes during audio playback
+
+## Full GPIO map
 
 All pins are defined in [`src/config.h`](src/config.h).
 
-| GPIO | Actuator                          | Notes                                                        |
-|------|------------------------------------|---------------------------------------------------------------|
-| 12   | Green LED — BLE connection status  | `kLedPin`; on when connected to the RC app                    |
-| 13   | Micro servo (SG90) — steering      | `kServoPin`; PWM control signal                                |
-| 18   | L9110S — DC motor input A          | `kMotorPinA`; digital drive signal (forward/reverse/stop)     |
-| 19   | L9110S — DC motor input B          | `kMotorPinB`; digital drive signal (forward/reverse/stop)     |
-| 21   | Auxiliary light 1                  | `kLight1Pin`; digital on/off                                   |
-| 22   | Auxiliary light 2                  | `kLight2Pin`; digital on/off                                   |
-| 23   | Auxiliary light 3                  | `kLight3Pin`; digital on/off                                   |
-| 25   | Auxiliary light 4                  | `kLight4Pin`; digital on/off                                   |
-| 26   | Speaker/buzzer — sound effects      | `kToneOutputPin`; DAC tone signal (triggered horn) |
+| GPIO | Function | Notes |
+|---|---|---|
+| 12 | BLE connection status LED (green) | `kLedPin` |
+| 13 | Steering servo (SG90) | `kServoPin`; PWM control signal |
+| 18 | Traction L9110S — motor input A | `kMotorPinA` |
+| 19 | Traction L9110S — motor input B | `kMotorPinB` |
+| 21 | Auxiliary light 1 | `kLight1Pin` |
+| 22 | Auxiliary light 2 | `kLight2Pin` |
+| 23 | Auxiliary light 3 | `kLight3Pin` |
+| 25 | Auxiliary light 4 | `kLight4Pin`; also DAC channel 1 — kept free of DAC use |
+| 26 | Audio DAC → LM386 (horn tone) | `kToneOutputPin`; DAC channel 2 |
 
-The red power-on LED is wired directly across VCC (through its current-limiting resistor) and
+The red power-on LED is wired directly across VCC-B (through its current-limiting resistor) and
 isn't driven by a GPIO.
 
 ## Project principles
