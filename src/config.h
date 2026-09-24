@@ -80,8 +80,9 @@ constexpr int kLight4Pin = 25;
 // control.
 constexpr int kToneOutputPin = 26;
 
-// Horn: a synthesized square-wave tone written directly to the DAC
-// (DacToneOutput::playHorn() blocks for the full duration).
+// Horn: a synthesized square-wave tone written directly to the DAC, clocked
+// by a background timer so it never blocks drive/steering commands (see
+// DacToneOutput / HornWaveform).
 constexpr unsigned long kHornDurationMs = 1500;
 constexpr int kHornFreqHz = 420;
 

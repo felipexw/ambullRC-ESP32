@@ -1,17 +1,18 @@
 # Tone Output Hardware Contract
 
 Satisfies FR-002, FR-003, FR-006, FR-007, FR-008, FR-010. This is the contract for
-`PwmToneOutput`, the real `IToneOutput` implementation (Hardware layer).
+`DacToneOutput`, the real `IToneOutput` implementation (Hardware layer). It replaced the original
+LEDC-based `PwmToneOutput`.
 
 ## Output pin
 
 | Signal | Config value |
 |---|---|
-| Tone output (to speaker/buzzer, via a simple driver stage if needed) | `config::kToneOutputPin` = 26 |
+| Tone output (built-in DAC channel 2 → coupling cap → LM386) | `config::kToneOutputPin` = 26 |
 
-A single GPIO driven via the ESP32's LEDC tone-generation peripheral (research.md §5) — not an
-external I2S DAC/amp, not the built-in analog DAC. Volume is fixed, set by a hardware trim
-potentiometer downstream of this pin; no firmware code controls it (FR-010).
+The pin is driven by the ESP32's built-in 8-bit DAC via `dacWrite()`. It does not use I2S/DMA or
+a stored sample. Volume is fixed, set by a hardware trim potentiometer downstream of this pin; no
+firmware code controls it (FR-010).
 
 ## Horn: fixed duration and tone (research.md §6, §7)
 
@@ -19,27 +20,32 @@ potentiometer downstream of this pin; no firmware code controls it (FR-010).
 |---|---|---|
 | Horn | `config::kHornDurationMs` = 1500ms | Constant `config::kHornFreqHz` (420Hz) |
 
-`playHorn()` records a start timestamp, sets the horn active, and writes the horn frequency to the
-LEDC channel. `tick(nowMs)` clears the horn-active flag and writes 0 (silence) once `nowMs` has
-passed the `[hornStartMs, hornStartMs + kHornDurationMs)` window.
+The waveform is a square wave that alternates between two DAC levels around the silent midline
+(128). `HornWaveform` (pure, host-tested) produces one level per half-period for
+`kHornDurationMs`, then returns to the midline.
 
 ## Silence otherwise
 
-`begin()` sets up the LEDC channel and leaves it silent. The output is silent at boot and whenever
-the horn is not playing (FR-006) — there is no background or idle sound.
+`begin()` writes the midline (silence) to the DAC and starts a periodic `esp_timer` at the
+half-period. While the horn is idle, each timer tick yields the midline and writes nothing. The
+output is silent at boot and whenever the horn is not playing (FR-006); there is no background or
+idle sound.
 
 ## Non-blocking playback (FR-007, FR-008)
 
-`playHorn()` and `tick(nowMs)` are O(1) per call: at most one LEDC tone write, never a blocking
-wait. This is what makes FR-007 ("never delay drive commands") and FR-008 ("never cut off a
-playing horn because of a drive command") true simultaneously: neither path blocks the other,
-because neither path blocks at all — the LEDC hardware peripheral keeps generating the configured
-square wave between `tick()` calls with no CPU involvement.
+`playHorn()` only arms `HornWaveform` and returns immediately. The DAC writes run on the ESP-IDF
+timer task, not in `loop()`, so drive and steering commands are never delayed by a playing horn
+(FR-007). Drive commands never touch the tone output, so they cannot cut off a playing horn
+(FR-008).
+
+An earlier `DacToneOutput` generated the tone with a `delayMicroseconds()` loop inside
+`playHorn()`. That loop blocked `loop()` for the full 1.5s, so the steering servo and DC motor
+ignored commands while the horn sounded. The timer-driven design above fixes that.
 
 ## `hornBusy()` semantics
 
-`hornBusy()` returns `true` from the moment `playHorn()` starts until `tick()` observes `nowMs`
-has passed the horn's duration window, then `false` again.
+`hornBusy()` returns `true` from the moment `playHorn()` arms the tone until the last half-period
+has been played, then `false` again. A retrigger while busy is ignored (FR-004).
 
 ## Out of scope
 

@@ -142,6 +142,14 @@ extern void test_tone_flow_plays_again_once_no_longer_busy(void);
 extern void test_tone_flow_drive_commands_unaffected_while_horn_busy(void);
 extern void test_tone_flow_disconnect_while_horn_busy_still_stops_motor(void);
 
+// test_horn_waveform.cpp
+extern void test_horn_waveform_idle_is_silent_and_not_busy(void);
+extern void test_horn_waveform_start_returns_immediately_and_is_busy(void);
+extern void test_horn_waveform_alternates_high_and_low_while_playing(void);
+extern void test_horn_waveform_ends_silent_after_full_duration(void);
+extern void test_horn_waveform_duration_matches_config(void);
+extern void test_horn_waveform_can_play_again_once_finished(void);
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -269,6 +277,13 @@ int main(int argc, char **argv) {
   RUN_TEST(test_tone_flow_plays_again_once_no_longer_busy);
   RUN_TEST(test_tone_flow_drive_commands_unaffected_while_horn_busy);
   RUN_TEST(test_tone_flow_disconnect_while_horn_busy_still_stops_motor);
+
+  RUN_TEST(test_horn_waveform_idle_is_silent_and_not_busy);
+  RUN_TEST(test_horn_waveform_start_returns_immediately_and_is_busy);
+  RUN_TEST(test_horn_waveform_alternates_high_and_low_while_playing);
+  RUN_TEST(test_horn_waveform_ends_silent_after_full_duration);
+  RUN_TEST(test_horn_waveform_duration_matches_config);
+  RUN_TEST(test_horn_waveform_can_play_again_once_finished);
 
   return UNITY_END();
 }
