@@ -137,23 +137,33 @@ void loop() {
         }
       } else {
         DriveCommand cmd;
-        if (commandAssembler.apply(line, cmd) == ParseResult::Ok) {
+        const unsigned long now = millis();
+        if (commandAssembler.apply(line, now, cmd) == ParseResult::Ok) {
           if (cmd.steer < 0) {
             Serial.println("steer command received: LEFT");
           } else if (cmd.steer > 0) {
             Serial.println("steer command received: RIGHT");
           }
-          Direction direction = control.onCommand(cmd, millis());
+          Direction direction = control.onCommand(cmd, now);
           emitDirection(direction);
         }
       }
     }
   }
 
+  const unsigned long now = millis();
   Direction safeStateDirection;
-  if (control.onTick(transport.connected(), millis(), safeStateDirection)) {
+  if (control.onTick(transport.connected(), now, safeStateDirection)) {
     emitDirection(safeStateDirection);
     commandAssembler.reset();
+  }
+
+  // A released button just stops being resent: drop that axis back to
+  // neutral even while the other button is still held (its resends keep the
+  // fail-safe timeout above from ever firing).
+  DriveCommand afterExpiry;
+  if (commandAssembler.expireStaleAxes(now, afterExpiry)) {
+    emitDirection(decideDirection(afterExpiry));
   }
 
   hardwareOutput.tick(millis());

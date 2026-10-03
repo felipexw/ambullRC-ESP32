@@ -41,6 +41,14 @@ backstop if the app stops sending commands entirely (e.g. it crashes or the conn
 mid-turn) and also resets both axes so a stale pre-timeout value can't be resurrected by the next
 word command.
 
+**Per-axis expiry.** The same `kCommandTimeoutMs` window also applies to each axis on its own: a
+non-neutral axis that has not been resent within it is set back to `0`, while the other axis is
+left alone. The app MUST therefore resend `UP`/`DOWN`/`LEFT`/`RIGHT` (faster than
+`kCommandTimeoutMs`) for as long as the button is held. Without this, holding one button would
+keep the other axis latched indefinitely — e.g. steering held (`LEFT` resent) while the throttle
+button is released without a `STOP` left the car driving, because every `LEFT` counted as a fresh
+command and the whole-command timeout never fired. A numeric pair refreshes both axes at once.
+
 ### Numeric pairs (manual/terminal testing)
 
 ```

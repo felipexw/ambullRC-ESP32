@@ -76,6 +76,7 @@ extern void test_actuation_flow_disconnect_mid_pause_stays_stopped(void);
 extern void test_actuation_flow_malformed_line_does_not_change_hardware_state(void);
 extern void test_actuation_flow_turn_auto_stops_without_further_commands(void);
 extern void test_actuation_flow_word_commands_up_then_right_stay_independent(void);
+extern void test_actuation_flow_throttle_release_stops_motor_while_steering_is_held(void);
 
 // test_drive_command_assembler.cpp
 extern void test_assembler_up_sets_throttle_forward_steer_straight(void);
@@ -90,6 +91,9 @@ extern void test_assembler_center_zeros_steer_preserves_throttle(void);
 extern void test_assembler_numeric_command_overwrites_both_axes(void);
 extern void test_assembler_rejects_unrecognized_word(void);
 extern void test_assembler_reset_clears_stale_axis_state(void);
+extern void test_assembler_expires_throttle_no_longer_resent_while_steer_is_held(void);
+extern void test_assembler_expires_steer_no_longer_resent_while_throttle_is_held(void);
+extern void test_assembler_keeps_axes_that_are_still_being_resent(void);
 
 // test_light_command_parser.cpp
 extern void test_light_parses_light_on(void);
@@ -221,6 +225,7 @@ int main(int argc, char **argv) {
   RUN_TEST(test_actuation_flow_malformed_line_does_not_change_hardware_state);
   RUN_TEST(test_actuation_flow_turn_auto_stops_without_further_commands);
   RUN_TEST(test_actuation_flow_word_commands_up_then_right_stay_independent);
+  RUN_TEST(test_actuation_flow_throttle_release_stops_motor_while_steering_is_held);
 
   RUN_TEST(test_assembler_up_sets_throttle_forward_steer_straight);
   RUN_TEST(test_assembler_down_sets_throttle_reverse);
@@ -234,6 +239,9 @@ int main(int argc, char **argv) {
   RUN_TEST(test_assembler_numeric_command_overwrites_both_axes);
   RUN_TEST(test_assembler_rejects_unrecognized_word);
   RUN_TEST(test_assembler_reset_clears_stale_axis_state);
+  RUN_TEST(test_assembler_expires_throttle_no_longer_resent_while_steer_is_held);
+  RUN_TEST(test_assembler_expires_steer_no_longer_resent_while_throttle_is_held);
+  RUN_TEST(test_assembler_keeps_axes_that_are_still_being_resent);
 
   RUN_TEST(test_light_parses_light_on);
   RUN_TEST(test_light_parses_light_off);

@@ -37,7 +37,7 @@ void pumpAnyCommand(FakeTransport& transport, ToneControl& toneControl, FakeTone
     return;
   }
   DriveCommand cmd;
-  if (assembler.apply(line, cmd) == ParseResult::Ok) {
+  if (assembler.apply(line, nowMs, cmd) == ParseResult::Ok) {
     vehicle.emit(control.onCommand(cmd, nowMs));
   }
 }

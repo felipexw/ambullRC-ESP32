@@ -6,8 +6,13 @@
 namespace config {
 
 // Time without a valid command after which the connection is considered
-// stale and the vehicle enters the safe state.
-constexpr unsigned long kCommandTimeoutMs = 500;
+// stale and the vehicle enters the safe state. Also applied per axis
+// (DriveCommandAssembler::expireStaleAxes): a throttle or steer value not
+// resent within this window is dropped back to neutral, even if the other
+// axis is still being resent. Kept short so releasing an app button stops
+// the car near-instantly; it must still exceed the app's resend interval
+// while a button is held, or driving will stutter.
+constexpr unsigned long kCommandTimeoutMs = 200;
 
 constexpr int kSteerMin = -100;
 constexpr int kSteerMax = 100;

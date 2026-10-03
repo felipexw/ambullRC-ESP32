@@ -51,8 +51,18 @@ void pumpWordCommand(FakeTransport& transport, DriveCommandAssembler& assembler,
   std::string line;
   if (!transport.readLine(line)) return;
   DriveCommand cmd;
-  if (assembler.apply(line, cmd) != ParseResult::Ok) return;
+  if (assembler.apply(line, nowMs, cmd) != ParseResult::Ok) return;
   Direction direction = control.onCommand(cmd, nowMs);
+  log.emit(direction);
+  hardware.emit(direction);
+}
+
+// Mirrors main.cpp's per-axis expiry step, run once per loop() iteration.
+void tickAxisExpiry(DriveCommandAssembler& assembler, RecordingVehicleOutput& log,
+                     MotorServoVehicleOutput& hardware, unsigned long nowMs) {
+  DriveCommand cmd;
+  if (!assembler.expireStaleAxes(nowMs, cmd)) return;
+  Direction direction = decideDirection(cmd);
   log.emit(direction);
   hardware.emit(direction);
 }
@@ -229,4 +239,45 @@ void test_actuation_flow_word_commands_up_then_right_stay_independent(void) {
   TEST_ASSERT_EQUAL(static_cast<int>(FakeMotorDriver::Call::Forward), static_cast<int>(motor.last()));
   TEST_ASSERT_EQUAL(config::kServoRightAngleDeg, servo.last());
   TEST_ASSERT_EQUAL(static_cast<int>(Direction::ForwardRight), static_cast<int>(log.last()));
+}
+
+// Reproduces the real-world bug: steering is held (the app keeps resending
+// "LEFT"), the throttle button is pressed and then released. The app's
+// resent "LEFT" kept the whole-command timeout alive, so the latched "UP"
+// never expired and the car kept driving. The motor must stop once "UP"
+// stops being resent, while the still-held steering stays untouched.
+void test_actuation_flow_throttle_release_stops_motor_while_steering_is_held(void) {
+  FakeTransport transport;
+  DriveCommandAssembler assembler;
+  DirectionControl control;
+  RecordingVehicleOutput log;
+  FakeMotorDriver motor;
+  FakeSteeringServo servo;
+  MotorServoVehicleOutput hardware(motor, servo);
+
+  const unsigned long resendMs = config::kCommandTimeoutMs / 2;
+  const unsigned long throttleReleasedAt = 1000 + 2 * resendMs;
+  const unsigned long end = throttleReleasedAt + 4 * config::kCommandTimeoutMs;
+
+  // One loop() iteration per millisecond, mirroring main.cpp.
+  for (unsigned long now = 1000; now <= end; now++) {
+    if ((now - 1000) % resendMs == 0) {
+      transport.enqueueLine("LEFT");  // steering held the whole time
+      if (now <= throttleReleasedAt) transport.enqueueLine("UP");
+    }
+    pumpWordCommand(transport, assembler, control, log, hardware, now);
+    pumpWordCommand(transport, assembler, control, log, hardware, now);
+    tickFailSafe(transport, control, log, hardware, now);
+    tickAxisExpiry(assembler, log, hardware, now);
+    hardware.tick(now);
+
+    if (now == throttleReleasedAt) {
+      TEST_ASSERT_EQUAL(static_cast<int>(FakeMotorDriver::Call::Forward),
+                         static_cast<int>(motor.last()));
+      TEST_ASSERT_EQUAL(static_cast<int>(Direction::ForwardLeft), static_cast<int>(log.last()));
+    }
+  }
+
+  TEST_ASSERT_EQUAL(static_cast<int>(FakeMotorDriver::Call::Stop), static_cast<int>(motor.last()));
+  TEST_ASSERT_EQUAL(static_cast<int>(Direction::Left), static_cast<int>(log.last()));
 }
