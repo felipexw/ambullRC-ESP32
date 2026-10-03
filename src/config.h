@@ -23,16 +23,18 @@ constexpr int kServoPin = 13;
 // Lock-to-lock range for this test rig, also the hard clamp applied in
 // PwmSteeringServo::setAngleDeg(). Recalibrated on-device: the servo horn's
 // mounting offset against the steering linkage means the wheel-straight
-// point isn't the middle of this range (60 sits closer to the left lock at
-// 30 than to the right lock at 160) — confirmed by driving the car, not a
+// point isn't the middle of this range (60 sits closer to the right lock at
+// 30 than to the left lock at 160) — confirmed by driving the car, not a
 // typo.
 constexpr int kServoMinAngleDeg = 30;
 constexpr int kServoMaxAngleDeg = 160;
 constexpr int kServoNeutralAngleDeg = 60;
 constexpr int kServoMinPulseUs = 500;
 constexpr int kServoMaxPulseUs = 2400;
-constexpr int kServoLeftAngleDeg = kServoMinAngleDeg;
-constexpr int kServoRightAngleDeg = kServoMaxAngleDeg;
+// The servo is mounted so that a higher angle steers the wheels left —
+// confirmed on-device (RIGHT used to turn the car left).
+constexpr int kServoLeftAngleDeg = kServoMaxAngleDeg;
+constexpr int kServoRightAngleDeg = kServoMinAngleDeg;
 // The angle->pulse linear map (500-2400us across 0-180°, the Servo library's
 // own write() convention — independent of this rig's kServoMinAngleDeg/
 // kServoMaxAngleDeg lock-to-lock limits above) doesn't land exactly on the

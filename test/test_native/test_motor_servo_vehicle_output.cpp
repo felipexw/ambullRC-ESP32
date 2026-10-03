@@ -147,3 +147,19 @@ void test_output_stop_centers_servo_immediately_mid_turn_pulse(void) {
   output.tick(10);
   TEST_ASSERT_EQUAL(config::kServoNeutralAngleDeg, servo.last());
 }
+
+// Regression: the servo is mounted so a higher angle steers the wheels left;
+// RIGHT used to drive the servo to the max angle and turned the car left.
+void test_output_right_steers_to_the_lower_servo_angle(void) {
+  FakeMotorDriver motor;
+  FakeSteeringServo servo;
+  MotorServoVehicleOutput output(motor, servo);
+
+  output.emit(Direction::Right);
+  output.tick(0);
+  TEST_ASSERT_EQUAL(config::kServoMinAngleDeg, servo.last());
+
+  output.emit(Direction::Left);
+  output.tick(1);
+  TEST_ASSERT_EQUAL(config::kServoMaxAngleDeg, servo.last());
+}

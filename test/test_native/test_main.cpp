@@ -64,6 +64,7 @@ extern void test_output_stop_stops_immediately(void);
 extern void test_output_reversal_stops_immediately_then_waits_before_reversing(void);
 extern void test_output_right_turn_auto_stops_after_pulse_duration_with_no_new_command(void);
 extern void test_output_left_turn_auto_stops_after_pulse_duration_with_no_new_command(void);
+extern void test_output_right_steers_to_the_lower_servo_angle(void);
 extern void test_output_switching_turn_direction_restarts_the_pulse(void);
 extern void test_output_stop_centers_servo_immediately_mid_turn_pulse(void);
 
@@ -209,6 +210,7 @@ int main(int argc, char **argv) {
   RUN_TEST(test_output_reversal_stops_immediately_then_waits_before_reversing);
   RUN_TEST(test_output_right_turn_auto_stops_after_pulse_duration_with_no_new_command);
   RUN_TEST(test_output_left_turn_auto_stops_after_pulse_duration_with_no_new_command);
+  RUN_TEST(test_output_right_steers_to_the_lower_servo_angle);
   RUN_TEST(test_output_switching_turn_direction_restarts_the_pulse);
   RUN_TEST(test_output_stop_centers_servo_immediately_mid_turn_pulse);
 
