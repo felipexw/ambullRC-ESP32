@@ -56,6 +56,14 @@ constexpr unsigned long kServoTurnPulseMs = 150;
 constexpr int kMotorPinA = 18;
 constexpr int kMotorPinB = 19;
 
+// Forward is PWM'd on kMotorPinA at this duty cycle instead of full power:
+// on this rig, forward at 100% made the motor/wheel gears skip, while
+// reverse runs fine at full power and is left unchanged. Tune on-device.
+constexpr int kMotorForwardDutyPercent = 70;
+constexpr int kMotorPwmFreqHz = 1000;
+static_assert(kMotorForwardDutyPercent > 0 && kMotorForwardDutyPercent <= 100,
+              "forward duty must be in (0, 100]");
+
 // Protective pause before reversing the DC motor's polarity (forward<->reverse),
 // to avoid a back-EMF current spike stressing the L9110S bridge.
 constexpr unsigned long kMotorReversePauseMs = 300;
